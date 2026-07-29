@@ -1,8 +1,7 @@
 # IKB42603 Cloud Computing Security Essentials
 ## Lab 0 - Environment Setup Report
 
-**Student:** Surya Giri A/L Shanker
-**Date:** July 29, 2026  
+**Student:** Surya Giri A/L Shanker 
 **Institution:** UniKL MIIT  
 **Course:** IKB42603 Cloud Computing Security Essentials  
 **Instructor:** Prof. Dr. Shahrulniza Musa
