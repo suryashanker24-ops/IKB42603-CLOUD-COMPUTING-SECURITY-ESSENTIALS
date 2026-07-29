@@ -11,7 +11,7 @@
 
 ## Executive Summary
 
-This report documents the complete setup and verification of the local lab environment required for IKB42603 Cloud Computing Security Essentials. All required tools were successfully installed and verified on a Linux system (Kali Linux), including Docker, AWS CLI v2, Kubernetes (kind), kubectl, and helper tools (OpenSSL, oathtool). The environment runs entirely locally without requiring cloud accounts or internet connectivity after initial setup.
+This report documents the setup and verification of the required local development environment for Lab 0. The purpose of this lab was to prepare a working local system that can support containerization, cloud command-line interaction, Kubernetes-based development, and local AWS service simulation. A successful environment setup is essential because modern cloud and DevOps tasks often depend on these tools being installed correctly and functioning together. In this lab, the environment was prepared by installing and validating Docker, AWS CLI v2, Kind, kubectl, OpenSSL, oathtool, and LocalStack. Each tool was tested using terminal commands and supported by screenshots as evidence of successful installation and verification.
 
 ---
 
