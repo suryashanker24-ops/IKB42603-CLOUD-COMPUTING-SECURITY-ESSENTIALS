@@ -12,6 +12,30 @@
 
 This report documents the setup and verification of the required local development environment for Lab 0. The purpose of this lab was to prepare a working local system that can support containerization, cloud command-line interaction, Kubernetes-based development, and local AWS service simulation. A successful environment setup is essential because modern cloud and DevOps tasks often depend on these tools being installed correctly and functioning together. In this lab, the environment was prepared by installing and validating Docker, AWS CLI v2, Kind, kubectl, OpenSSL, oathtool, and LocalStack. Each tool was tested using terminal commands and supported by screenshots as evidence of successful installation and verification.
 
+
+## Objectives
+The main objectives of this lab are:
+
+- Install and verify Docker for container-based development and container management.
+- Install and verify AWS CLI v2 so that AWS services can be managed from the terminal.
+- Install and verify Kind and kubectl to support local Kubernetes cluster creation and management.
+- Install and verify helper utilities such as OpenSSL and oathtool for secure communication and authentication-related tasks.
+- Start, verify, and manage LocalStack locally to simulate AWS services without requiring a real AWS account.
+- Configure AWS CLI for LocalStack and confirm that the system is ready for local cloud-based testing.
+- Record the installation process clearly and provide evidence through screenshots and command outputs.
+
+
+
+## Learning Outcomes
+By completing this lab, the student should be able to:
+
+- Understand the basic setup process for essential cloud and container development tools.
+- Install and verify tools commonly used in cloud computing and DevOps environments.
+- Configure a local environment for testing container, Kubernetes, and AWS-related workflows.
+- Document technical procedures clearly using terminal commands and screenshots as evidence.
+
+
+
 ---
 
 ## Table of Contents
