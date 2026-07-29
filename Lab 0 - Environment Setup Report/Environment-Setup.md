@@ -1,7 +1,7 @@
 # IKB42603 Cloud Computing Security Essentials
 ## Lab 0 - Environment Setup Report
 
-**Student:** Surya  
+**Student:** Surya Giri A/L Shanker
 **Date:** July 29, 2026  
 **Institution:** UniKL MIIT  
 **Course:** IKB42603 Cloud Computing Security Essentials  
@@ -81,13 +81,10 @@ docker --version
 ```
 
 **Output:**
-```
-Docker version 29.0.2, build dfc4efb
-```
 
 **Status:** ✅ **PASS** - Docker version 29.0.2 is installed successfully.
 
-![Docker Version](Docker version.png)
+![Docker Version](<Docker version.png>)
 
 #### 2.2 Docker Hello-World Test
 ```bash
@@ -95,22 +92,10 @@ docker run --rm hello-world
 ```
 
 **Output:**
-```
-Hello from Docker!
-This message shows that your installation appears to be working correctly.
-
-To generate this message, Docker took the following steps:
- 1. The Docker client contacted the Docker daemon.
- 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
- 3. The Docker daemon created a new container from that image which runs the
-    executable that produces the output you are currently reading.
- 4. The Docker daemon streamed that output to the Docker client, which sent it
-    to your terminal.
-```
 
 **Status:** ✅ **PASS** - Docker is functioning correctly and can pull and run containers.
 
-![Docker Hello World](Docker install.png)
+![Docker Hello World](<Docker install.png>)
 
 **Key Observations:**
 - Docker daemon is running correctly
@@ -138,7 +123,7 @@ The screenshot shows the complete installation process:
 2. Extracted the archive
 3. Installed AWS CLI binaries and dependencies
 
-![AWS CLI Installation](aws install.png)
+![AWS CLI Installation](<aws install.png>)
 
 ### Verification
 
@@ -148,13 +133,10 @@ aws --version
 ```
 
 **Output:**
-```
-aws-cli/2.36.6 Python/3.14.6 Linux/6.19.14+kali-amd64 exe/x86_64.kali.2026
-```
 
 **Status:** ✅ **PASS** - AWS CLI version 2.36.6 is installed successfully.
 
-![AWS CLI Version](aws version.png)
+![AWS CLI Version](<aws version.png>)
 
 **Key Details:**
 - **Version:** 2.36.6 (v2.x as required)
@@ -180,7 +162,7 @@ chmod +x ./kind
 sudo mv ./kind /usr/local/bin/kind
 ```
 
-![kind Installation](Kind install.png)
+![kind Installation](<Kind install.png>)
 
 #### Verification
 ```bash
@@ -188,13 +170,10 @@ kind --version
 ```
 
 **Output:**
-```
-kind version 0.23.0
-```
 
 **Status:** ✅ **PASS** - kind version 0.23.0 is installed successfully.
 
-![kind Version](Kind & kubectl version.png)
+![kind Version](<Kind & kubectl version.png>)
 
 ---
 
@@ -210,7 +189,7 @@ sudo mv kubectl /usr/local/bin/kubectl
 chmod +x /usr/local/bin/kubectl
 ```
 
-![kubectl Installation](kubectl install.png)
+![kubectl Installation](<kubectl install.png>)
 
 #### Verification
 ```bash
@@ -218,14 +197,10 @@ kubectl version --client
 ```
 
 **Output:**
-```
-Client Version: v1.36.3
-Kustomize Version: v5.8.1
-```
 
 **Status:** ✅ **PASS** - kubectl version 1.36.3 is installed successfully.
 
-![kubectl & kind Versions](Kind & kubectl version.png)
+![kubectl & kind Versions](<Kind & kubectl version.png>)
 
 **Key Details:**
 - **kubectl Version:** v1.36.3
@@ -244,13 +219,10 @@ openssl version
 ```
 
 **Output:**
-```
-OpenSSL 3.6.2 7 Apr 2026 (Library: OpenSSL 3.6.2 7 Apr 2026)
-```
 
 **Status:** ✅ **PASS** - OpenSSL version 3.6.2 is already installed (pre-installed on Linux).
 
-![OpenSSL Version](openssl version.png)
+![OpenSSL Version](<openssl version.png>)
 
 **Purpose:** Used in Lab 3 for encryption, generating keys, and creating certificates.
 
@@ -271,7 +243,7 @@ The installation included:
 - **oathtool** package
 - **liboath0t64** dependency library
 
-![oathtool Installation](oathtool install.png)
+![oathtool Installation](<oathtool install.png>)
 
 #### Verification
 ```bash
@@ -279,19 +251,10 @@ oathtool --version
 ```
 
 **Output:**
-```
-oathtool (OATH Toolkit) 2.6.14
-Copyright (C) 2009-2026 Simon Josefsson.
-License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.
-
-Written by Simon Josefsson.
-```
 
 **Status:** ✅ **PASS** - oathtool version 2.6.14 is installed successfully.
 
-![oathtool Version](oathtool version.png)
+![oathtool Version](<oathtool version.png>)
 
 **Purpose:** Used in Lab 4 to generate MFA/TOTP (Time-based One-Time Password) codes for multi-factor authentication testing.
 
@@ -329,7 +292,7 @@ docker run -d --name localstack -p 4566:4566 localstack/localstack
 - `-p 4566:4566` : Map port 4566 (LocalStack API endpoint)
 - `localstack/localstack` : Official LocalStack Docker image
 
-![LocalStack Start](start localstack.png)
+![LocalStack Start](<start localstack.png>)
 
 **Status:** ✅ **PASS** - LocalStack container started successfully.
 
@@ -386,7 +349,7 @@ curl http://localhost:4566/_localstack/health
 }
 ```
 
-![LocalStack Health](localstack health.png)
+![LocalStack Health](<localstack health.png>)
 
 **Status:** ✅ **PASS** - LocalStack is healthy and all AWS services are available.
 
@@ -450,17 +413,11 @@ The screenshot shows the complete cluster creation:
 5. ✅ Installing CNI (Container Network Interface)
 6. ✅ Installing StorageClass
 
-![Kubernetes Cluster Creation](kubernetes cluster kind create.png)
+![Kubernetes Cluster Creation](<kubernetes cluster kind create.png>)
 
 **Status:** ✅ **PASS** - Kubernetes cluster "ccse" created successfully.
 
 **Output Message:**
-```
-Set kubectl context to "kind-ccse"
-You can now use your cluster with:
-
-kubectl cluster-info --context kind-ccse
-```
 
 ---
 
@@ -472,12 +429,8 @@ kubectl cluster-info --context kind-ccse
 ```
 
 **Output:**
-```
-Kubernetes control plane is running at https://127.0.0.1:42763
-CoreDNS is running at https://127.0.0.1:42763/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
-```
 
-![Cluster Info](Screenshot 2026-07-29 120330.png)
+![Cluster Info](<Screenshot 2026-07-29 120330.png>)
 
 **Status:** ✅ **PASS** - Kubernetes control plane is accessible locally.
 
@@ -489,12 +442,21 @@ kubectl get nodes
 ```
 
 **Output:**
-```
-NAME                 STATUS   ROLES           AGE   VERSION
-ccse-control-plane   Ready    control-plane   87s   v1.30.0
+
+![Cluster Info](<Screenshot 2026-07-29 120330.png>)
+
+**Status:** ✅ **PASS** - Kubernetes control plane is accessible locally.
+
+---
+
+#### 7.2.2 Node Status
+```bash
+kubectl get nodes
 ```
 
-![Cluster Nodes](Screenshot 2026-07-29 120330.png)
+**Output:**
+
+![Cluster Nodes](<Screenshot 2026-07-29 120330.png>)
 
 **Status:** ✅ **PASS** - Control plane node is in "Ready" state.
 
