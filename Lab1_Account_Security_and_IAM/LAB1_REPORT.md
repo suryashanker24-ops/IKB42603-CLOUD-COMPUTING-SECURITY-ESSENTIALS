@@ -157,6 +157,18 @@ aws --endpoint-url=http://localhost:4566 iam list-policies --scope Local
 ### Notes
 The initial identity landscape revealed a clean environment with no existing users, no groups, and no custom policies. This confirmed that the LocalStack environment was in a pristine state and ready for IAM resource creation. In a production environment, this mapping step would typically reveal existing resources that need to be documented, analyzed, and potentially remediated according to security best practices.
 
+### IAM Concepts Overview
+
+This table summarizes the core IAM concepts that form the foundation of AWS identity and access management:
+
+| Concept | AWS term | Purpose |
+|---|---|---|
+| All-powerful owner | Root user | The original account owner with unrestricted access to everything. Should never be used for daily tasks because if it's compromised, there's no limit to the damage. |
+| Human/app identity | IAM User | Represents a specific person or application that needs to interact with AWS resources, with its own credentials and permissions. |
+| Permission bundle | IAM Policy | A JSON document that defines exactly what actions are allowed or denied on which resources — the actual rules of access. |
+| Collection of users | IAM Group | A way to organize multiple IAM users together so permissions can be managed once (at the group level) instead of individually. |
+| Temporary identity | IAM Role | An identity that can be assumed temporarily (by a user, service, or application) to gain a specific set of permissions for a limited time, without needing permanent credentials. |
+
 ---
 
 ## Step 5: Task 2 - Create Least-Privilege Admin User
