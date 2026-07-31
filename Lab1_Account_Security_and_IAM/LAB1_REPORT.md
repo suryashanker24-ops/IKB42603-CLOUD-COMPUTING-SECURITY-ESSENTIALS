@@ -1,7 +1,8 @@
-# Lab 1: Cloud Account Security and IAM Report
+# Lab 1: Cloud Account Security and IAM Report Session A
 
 ## Student Information
-- Name: Surya
+- Name: Surya Giri A/L Shanker
+- Student ID: 52215124335
 - Course: IKB42603 Cloud Computing Security Essentials 
 - Lab Task: Lab 1 - Cloud Account Security and IAM
 - Lecturer Name: Nor Adani Kamal Mohamad Nasir
