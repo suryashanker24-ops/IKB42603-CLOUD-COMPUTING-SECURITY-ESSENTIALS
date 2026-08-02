@@ -151,8 +151,7 @@ aws --endpoint-url=http://localhost:4566 iam list-policies --scope Local
 - aws iam list-policies --scope Local lists all customer-managed policies (excluding AWS-managed policies), showing what custom permission sets have been created, which provides insight into specialized access control requirements.
 - The --endpoint-url flag in each command ensures that the requests are sent to LocalStack rather than the real AWS API.
 
-### Evidence
-![Initial identity landscape mapping](screenshots/05-task1-identity-landscape.png)
+
 
 ### Notes
 The initial identity landscape revealed a clean environment with no existing users, no groups, and no custom policies. This confirmed that the LocalStack environment was in a pristine state and ready for IAM resource creation. In a production environment, this mapping step would typically reveal existing resources that need to be documented, analyzed, and potentially remediated according to security best practices.
@@ -395,7 +394,6 @@ The following checklist was verified based on the lab results and screenshots:
 | Container runtime | Docker | Docker Desktop (latest version) | Completed | screenshots/02-docker-version.png |
 | Local AWS platform | LocalStack | LocalStack container running on port 4566 | Completed | screenshots/03-start-localstack.png, screenshots/04-localstack-healthy.png |
 | Cloud CLI | AWS CLI v2 | Configured for LocalStack with endpoint http://localhost:4566 | Completed | screenshots/01-aws-configure.png |
-| Identity mapping | IAM resources | Listed users, groups, and policies in initial state | Completed | screenshots/05-task1-identity-landscape.png |
 | Admin group | IAM Group "Admins" | Created with AdministratorAccess policy attached | Completed | screenshots/06-task2-create-group-policy.png |
 | Admin user | IAM User "surya-admin" | Created and added to Admins group | Completed | screenshots/07-task2-create-admin-user.png, screenshots/08-task2-add-user-to-group.png |
 | Group membership | Admins group | Verified surya-admin membership | Completed | screenshots/09-task2-verify-membership.png |
