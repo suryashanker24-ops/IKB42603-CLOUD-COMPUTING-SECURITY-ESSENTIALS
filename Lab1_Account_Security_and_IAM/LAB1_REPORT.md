@@ -1,17 +1,18 @@
-# Lab 1: Cloud Account Security and IAM Report Session A
+# Lab 1: Cloud Account Security and IAM Report
 
 ## Student Information
-- Name: Surya Giri A/L Shanker
-- Student ID: 52215124335
+- Name: Surya
 - Course: IKB42603 Cloud Computing Security Essentials 
 - Lab Task: Lab 1 - Cloud Account Security and IAM
 - Lecturer Name: Nor Adani Kamal Mohamad Nasir
 
 ## Overview
-This report documents the implementation and verification of AWS Identity and Access Management (IAM) security practices in a controlled local environment using LocalStack. The purpose of this lab was to develop practical understanding of cloud identity management, user provisioning, access control policies, and secure credential management practices. Effective IAM configuration is essential because it forms the foundation of cloud security by controlling who can access resources and what actions they can perform. In this lab, the environment was prepared by starting and verifying LocalStack, configuring AWS CLI for local testing, and then systematically creating users with different privilege levels, organizing them into groups, attaching appropriate policies, and managing access keys following security best practices. Each task was executed using AWS CLI commands and supported by screenshots as evidence of successful implementation.
+This report documents the implementation and verification of identity and access management security practices across two distinct computing platforms: cloud services (AWS IAM) and container orchestration (Kubernetes RBAC). The lab was conducted in two sessions over two weeks. Session A focused on AWS Identity and Access Management in a controlled local environment using LocalStack, covering user provisioning, group-based access control, policy attachment, and secure credential management. Session B extended these security principles to Kubernetes environments using kind (Kubernetes IN Docker), demonstrating namespace isolation, Role-Based Access Control (RBAC), and enforced access boundaries. The purpose of this comprehensive lab was to develop practical understanding of identity management, access control policies, and the principle of least privilege as applied across different computing paradigms. Effective access control is essential because it forms the foundation of security in both cloud and container environments by controlling who can access resources and what actions they can perform. Both sessions were executed using command-line tools (AWS CLI and kubectl) against local development environments, and each task was systematically documented with terminal commands and screenshots as evidence of successful implementation.
 
 ## Objectives
-The objectives of this lab are:
+The objectives of this lab across both sessions are:
+
+**Session A Objectives (LocalStack IAM):**
 - Install and verify Docker to support container-based AWS service simulation.
 - Start and verify LocalStack to provide a local AWS environment for safe experimentation without incurring cloud costs.
 - Configure AWS CLI to communicate with LocalStack so that IAM operations can be performed locally.
@@ -19,28 +20,69 @@ The objectives of this lab are:
 - Create a least-privilege administrative user through group-based access control to demonstrate proper security architecture.
 - Create a read-only user to implement the principle of least privilege for analyst roles.
 - Manage access keys by creating, listing, and rotating credentials to practice secure key lifecycle management.
+
+**Session B Objectives (Kubernetes RBAC):**
+- Create a local Kubernetes cluster using kind for safe RBAC experimentation without cloud costs.
+- Implement namespace-based isolation to separate development and production environments within a single cluster.
+- Create a service account to establish an identity for access control testing.
+- Define a Role with limited permissions following the principle of least privilege.
+- Bind the Role to the service account using a RoleBinding to activate permissions.
+- Test access controls to verify that RBAC policies correctly enforce allowed and denied operations.
+- Verify RBAC configuration by examining role binding definitions.
+
+**Common Objectives:**
 - Document all procedures clearly using terminal commands and screenshots as evidence of implementation.
+- Understand and apply the principle of least privilege across different computing platforms.
+- Practice identity and access management in safe local environments before applying to production systems.
 
 ## Learning Outcomes
-By completing this lab, the student should be able to:
+By completing this lab across both sessions, the student should be able to:
+
+**Session A Outcomes (AWS IAM):**
 - Understand fundamental IAM concepts including users, groups, policies, and managed policies.
 - Configure local AWS development environments using LocalStack for safe testing and experimentation.
 - Implement the principle of least privilege by creating users with appropriate permission boundaries.
 - Apply group-based access control strategies to simplify permission management at scale.
 - Manage access key lifecycles including creation, listing, and rotation following security best practices.
 - Differentiate between administrative and read-only access levels and their appropriate use cases.
+
+**Session B Outcomes (Kubernetes RBAC):**
+- Understand Kubernetes RBAC concepts including service accounts, roles, role bindings, and namespaces.
+- Create and manage local Kubernetes clusters using kind for development and testing.
+- Implement namespace-based isolation to separate environments within a single cluster.
+- Define roles with specific permissions following the principle of least privilege.
+- Connect identities to permissions through role bindings to implement access controls.
+- Test and verify access control policies using kubectl authorization commands.
+
+**Common Outcomes:**
+- Recognize that identity and access management principles (least privilege, separation of concerns, explicit permissions) apply across different computing platforms.
 - Document technical security procedures clearly using terminal commands and visual evidence.
+- Understand the difference between authentication (proving identity) and authorization (granting permissions) in security systems.
 
 ## Environment and Prerequisites
 The lab was conducted on a Windows-based environment with Docker Desktop installed and internet access for downloading container images. The following tools and conditions were required before starting the lab:
+
+**Session A Prerequisites (LocalStack IAM):**
 - Docker Desktop with container runtime support for running LocalStack services.
 - AWS CLI v2 installed and accessible from the command line for executing IAM operations.
 - Terminal or command prompt with sufficient permissions to execute Docker and AWS commands.
 - LocalStack container image available or downloadable from Docker Hub.
 - Basic understanding of cloud computing concepts and command-line interface operations.
-- Sufficient system resources to run Docker containers without performance degradation.
+
+**Session B Prerequisites (Kubernetes RBAC):**
+- Kind (Kubernetes IN Docker) tool installed for creating local Kubernetes clusters.
+- Kubectl command-line tool installed for interacting with Kubernetes clusters.
+- Docker Desktop with sufficient resources to run Kubernetes control plane and worker node containers.
+- Basic understanding of container orchestration and Kubernetes concepts.
+
+**Common Prerequisites:**
+- Sufficient system resources (CPU, memory, disk) to run Docker containers without performance degradation.
+- Administrative privileges on the local system for installing tools and managing containers.
+- Stable internet connection for downloading container images and documentation access.
 
 ---
+
+# Session A (Week 1) — Cloud Identity with LocalStack IAM
 
 ## Step 1: Install and Verify Docker
 Docker is a containerization platform that enables applications and services to run in isolated environments called containers. It is a critical tool in cloud computing and DevOps because it provides consistent, reproducible environments across different systems and eliminates the "works on my machine" problem. In this lab, Docker was required to run LocalStack, which simulates AWS services locally within a container. Verifying Docker installation ensures that the container runtime is available and functioning properly before attempting to start LocalStack.
@@ -79,11 +121,13 @@ LocalStack is a fully functional local cloud stack that emulates AWS services in
 ### Terminal Commands
 ```bash
 docker run -d --name localstack -p 4566:4566 localstack/localstack
+docker ps
 curl http://localhost:4566/_localstack/health
 ```
 
 ### Explanation of the Commands
 - docker run -d --name localstack -p 4566:4566 localstack/localstack starts a new LocalStack container in detached mode (-d), assigns it the name "localstack" for easier management, and maps port 4566 on the host to port 4566 in the container, which is the primary endpoint for all LocalStack services.
+- docker ps lists all currently running containers, confirming that the LocalStack container is active and operational.
 - curl http://localhost:4566/_localstack/health sends an HTTP GET request to LocalStack's health check endpoint, which returns the status of all simulated AWS services, confirming that the local cloud environment is ready to accept requests.
 
 ### Evidence
@@ -365,9 +409,198 @@ The complete access key lifecycle was successfully demonstrated, including listi
 
 ---
 
+# Session B (Week 2) — Enforced Access Control with Kubernetes RBAC
+
+## Step 8: Setup - Create a Local Kubernetes Cluster
+Kubernetes is an open-source container orchestration platform that automates the deployment, scaling, and management of containerized applications. It has become the de facto standard for cloud-native application deployment because it provides consistent infrastructure abstractions across different cloud providers and on-premises environments. In cloud computing security, Kubernetes introduces new identity and access control challenges because multiple users, services, and applications need carefully controlled access to cluster resources. To practice Kubernetes security locally without cloud costs, this lab uses kind (Kubernetes IN Docker), which runs a complete Kubernetes cluster inside Docker containers. Creating a local Kubernetes cluster enables safe experimentation with RBAC policies, namespace isolation, and access control enforcement in a production-like environment.
+
+### Purpose
+- Create a local Kubernetes cluster for practicing RBAC and access control.
+- Verify cluster health and connectivity using kubectl commands.
+- Establish a safe testing environment for security policy experimentation.
+
+### Terminal Commands
+```bash
+kind create cluster --name ccse-lab1
+kubectl cluster-info --context kind-ccse-lab1
+kubectl get nodes
+```
+
+### Explanation of the Commands
+- kind create cluster --name ccse-lab1 creates a new Kubernetes cluster named "ccse-lab1" running inside Docker containers, providing a fully functional control plane and worker nodes for local development and testing.
+- kubectl cluster-info --context kind-ccse-lab1 displays connection information about the cluster, including the Kubernetes control plane URL and CoreDNS service, confirming that kubectl can successfully communicate with the cluster API server.
+- kubectl get nodes lists all nodes in the cluster and shows their status, confirming that the cluster is operational and ready to accept workload deployments.
+
+### Evidence
+![Creating the Kubernetes cluster](screenshots/session%20b%20create%20the%20cluster.png)
+
+![Confirming cluster is up](screenshots/session%20b%20confirm%20the%20cluster%20is%20up.png)
+
+### Notes
+The local Kubernetes cluster was successfully created and verified. Unlike LocalStack which simulates AWS services, kind runs a real Kubernetes cluster with actual control plane components, making it an authentic environment for learning Kubernetes security concepts. The cluster runs entirely within Docker containers, requiring no virtual machines or cloud resources, which makes it lightweight and fast to create and destroy. This cluster provides the foundation for implementing namespace-based isolation and role-based access control in subsequent tasks.
+
+---
+
+## Step 9: Task 5 - Separate Environments with Namespaces
+Namespaces in Kubernetes provide logical isolation between different environments, teams, or applications running within the same physical cluster. They are analogous to folders in a filesystem or VPCs in cloud networking—they create boundaries that help organize resources and implement access controls. In enterprise Kubernetes deployments, namespaces are used to separate development, staging, and production environments, or to isolate different teams or projects from each other. Namespaces are critical for multi-tenancy because they enable resource quotas, network policies, and RBAC rules to be applied at the namespace level, ensuring that users and applications can only access resources within their designated boundaries. In this task, separate namespaces were created for development and production environments to demonstrate environment isolation.
+
+### Purpose
+- Create separate namespaces for development and production environments.
+- Demonstrate logical isolation within a single Kubernetes cluster.
+- Establish namespace boundaries for applying RBAC policies.
+
+### Terminal Commands
+```bash
+kubectl create namespace dev
+kubectl create namespace prod
+kubectl get namespaces
+```
+
+### Explanation of the Commands
+- kubectl create namespace dev creates a new namespace named "dev" that will serve as an isolated environment for development workloads, with its own resource quotas and access policies.
+- kubectl create namespace prod creates a new namespace named "prod" for production workloads, ensuring that production resources are logically separated from development resources and can have stricter access controls.
+- kubectl get namespaces lists all namespaces in the cluster, including both the newly created namespaces and the default system namespaces like kube-system, kube-public, and kube-node-lease, confirming successful namespace creation.
+
+### Evidence
+![Creating dev and prod namespaces](screenshots/session%20b%20task%205-%20seperate%20environments%20with%20namespace%201.png)
+
+![Listing all namespaces](screenshots/session%20b%20task5-%20seperate%20environments%20with%20namespace%202.png)
+
+### Notes
+The development and production namespaces were successfully created, establishing clear environment boundaries within the cluster. This separation is fundamental to implementing the principle of least privilege in Kubernetes because it enables access controls to be scoped to specific environments. For example, developers might have full access to the dev namespace but no access to prod, while production operations teams might have read-only access to dev and controlled write access to prod. Namespace isolation also supports resource management by allowing administrators to set CPU and memory quotas per namespace, preventing one environment from consuming all cluster resources.
+
+---
+
+## Step 10: Task 6 - Define a Role and Bind It (Least Privilege)
+Role-Based Access Control (RBAC) is Kubernetes' native authorization mechanism for controlling what actions users and service accounts can perform on cluster resources. RBAC works by defining Roles (which specify allowed actions on resources) and RoleBindings (which grant those roles to specific users or service accounts). This model implements the principle of least privilege by explicitly defining permissions rather than relying on implicit or overly broad access. In Kubernetes, RBAC is essential because the default service account in a namespace has minimal permissions by design, and any application or user requiring access to cluster resources must be explicitly granted those permissions through RBAC policies. In this task, a complete RBAC configuration was implemented by creating a service account, defining a role with limited permissions, and binding that role to the service account.
+
+### 10.1 Create Service Account
+A service account is a special type of identity in Kubernetes designed for applications and processes running inside pods. Unlike user accounts (which represent humans), service accounts provide programmatic identities that can be granted specific permissions through RBAC.
+
+#### Purpose
+- Create a service account for a development user identity.
+- Establish an identity that can be granted specific permissions through RBAC.
+- Demonstrate service account creation as the foundation for access control.
+
+#### Terminal Commands
+```bash
+kubectl create serviceaccount dev-user -n dev
+kubectl get serviceaccounts -n dev
+```
+
+#### Explanation of the Commands
+- kubectl create serviceaccount dev-user -n dev creates a new service account named "dev-user" in the dev namespace, providing a distinct identity that can be used by applications or users in that environment and can be granted permissions through role bindings.
+- kubectl get serviceaccounts -n dev lists all service accounts in the dev namespace, including the default service account and the newly created dev-user account, confirming successful creation.
+
+#### Evidence
+![Creating service account](screenshots/session%20b%20task%206%20create%20a%20service%20account.png)
+
+### 10.2 Create Role with Read-Only Pod Permissions
+After creating the service account, a Role must be defined that specifies exactly what actions are allowed on which resources. This Role will grant read-only permissions on pods within the dev namespace.
+
+#### Purpose
+- Define a Role with specific, limited permissions.
+- Grant only read access to pods (list and get operations).
+- Implement the principle of least privilege by denying write operations.
+
+#### Terminal Commands
+```bash
+kubectl create role pod-reader --verb=get,list --resource=pods -n dev
+kubectl get role pod-reader -n dev -o yaml
+```
+
+#### Explanation of the Commands
+- kubectl create role pod-reader --verb=get,list --resource=pods -n dev creates a new Role named "pod-reader" in the dev namespace that allows only "get" and "list" operations on pod resources, explicitly excluding write operations like create, update, delete, or patch.
+- kubectl get role pod-reader -n dev -o yaml retrieves the complete YAML definition of the created role, showing the exact permissions defined including the API groups, resources, and verbs, which confirms the role was created with the correct restricted permissions.
+
+#### Evidence
+![Creating role with read-only permissions](screenshots/session%20b%20task%206%20create%20a%20role.png)
+
+### 10.3 Bind Role to Service Account
+The final step in implementing RBAC is creating a RoleBinding that connects the Role (which defines permissions) to the service account (which represents an identity). This binding activates the permissions.
+
+#### Purpose
+- Create a RoleBinding to grant the pod-reader role to the dev-user service account.
+- Activate the RBAC permissions by connecting identity to role.
+- Complete the least-privilege access control configuration.
+
+#### Terminal Commands
+```bash
+kubectl create rolebinding dev-user-binding --role=pod-reader --serviceaccount=dev:dev-user -n dev
+kubectl get rolebinding dev-user-binding -n dev -o yaml
+```
+
+#### Explanation of the Commands
+- kubectl create rolebinding dev-user-binding --role=pod-reader --serviceaccount=dev:dev-user -n dev creates a RoleBinding named "dev-user-binding" that grants the pod-reader role to the dev-user service account in the dev namespace, thereby authorizing that service account to perform get and list operations on pods.
+- kubectl get rolebinding dev-user-binding -n dev -o yaml retrieves the complete YAML definition of the role binding, showing the connection between the role and the service account, confirming that the binding was created correctly and the permissions are now active.
+
+#### Evidence
+![Binding role to service account](screenshots/session%20b%20task%206%20bind%20the%20role.png)
+
+### Notes
+The complete RBAC configuration was successfully implemented following the principle of least privilege. The dev-user service account now has explicit, limited permissions: it can list and view pods in the dev namespace, but cannot create, modify, or delete pods, and has no access to other namespaces or other resource types. This demonstrates proper security architecture where permissions are granted explicitly and minimally rather than broadly. In production environments, RBAC policies would be defined for all users, service accounts, and applications, ensuring that every identity has exactly the permissions it needs and no more.
+
+---
+
+## Step 11: Task 7 - Test That Access Control Works
+Testing access control policies is a critical step in security implementation because it verifies that the RBAC rules are functioning as intended. Without testing, there is no confirmation that the principle of least privilege is actually being enforced—misconfigurations could grant excessive permissions or fail to grant necessary permissions. Kubernetes provides the "kubectl auth can-i" command specifically for this purpose, allowing administrators to check whether a particular identity has permission to perform a specific action without actually attempting that action. This testing approach is safe and non-destructive because it only queries the authorization system without making any changes to cluster resources. In this task, the RBAC configuration was tested to verify that the dev-user service account can list pods in the dev namespace but cannot delete pods or access other namespaces.
+
+### Purpose
+- Verify that the dev-user service account can list pods in the dev namespace.
+- Confirm that the service account cannot delete pods (write permission denied).
+- Confirm that the service account cannot access resources in the prod namespace.
+- Validate that RBAC policies are correctly enforcing least-privilege access.
+
+### Terminal Commands
+```bash
+SA=system:serviceaccount:dev:dev-user
+kubectl auth can-i list pods -n dev --as=$SA      # Should be YES
+kubectl auth can-i delete pods -n dev --as=$SA    # Should be NO
+kubectl auth can-i list pods -n prod --as=$SA     # Should be NO
+```
+
+### Explanation of the Commands
+- SA=system:serviceaccount:dev:dev-user creates a shell variable containing the fully qualified service account identifier, which follows the Kubernetes naming convention for service account principals and simplifies subsequent commands.
+- kubectl auth can-i list pods -n dev --as=$SA queries the authorization system to determine whether the dev-user service account has permission to list pods in the dev namespace, which should return "yes" because the pod-reader role grants list permissions.
+- kubectl auth can-i delete pods -n dev --as=$SA tests whether the service account can delete pods in the dev namespace, which should return "no" because the pod-reader role only grants read operations (get and list), not write operations (delete).
+- kubectl auth can-i list pods -n prod --as=$SA verifies that the service account cannot access resources in the prod namespace, which should return "no" because the RoleBinding was scoped to the dev namespace only, demonstrating namespace-level access isolation.
+
+### Evidence
+![Testing access control enforcement](screenshots/session%20b%20task%207%20test%20that%20access%20control%20works.png)
+
+### Notes
+The access control tests confirmed that RBAC is correctly enforcing the intended security policies. The dev-user service account has exactly the permissions it was granted: read-only access to pods in the dev namespace, with no write permissions and no access to other namespaces. This demonstrates both the principle of least privilege (minimal permissions granted) and namespace isolation (access boundaries enforced). The distinction between authentication (proving who you are) and authorization (determining what you can do) is critical here—Kubernetes authenticates the service account identity and then uses RBAC to authorize specific actions based on the roles and bindings configured. In production environments, this testing process should be repeated for all users and service accounts to ensure that security policies are correctly implemented before deploying applications.
+
+---
+
+## Step 12: Verification Command
+Verification commands provide proof of configuration by displaying the actual YAML definitions of security resources in the cluster. While testing commands (like kubectl auth can-i) verify the behavior of access controls, verification commands show the underlying configuration that produces that behavior. This is important for security auditing, troubleshooting, and documentation because it provides transparency into what policies are actually applied. The RoleBinding YAML definition shows the complete configuration including which role is granted, which service account receives the role, and which namespace the binding applies to.
+
+### Purpose
+- Display the complete RBAC configuration for audit and verification.
+- Prove that the role binding exists and is correctly configured.
+- Provide transparency into the access control implementation.
+
+### Terminal Commands
+```bash
+kubectl get rolebinding dev-user-binding -n dev -o yaml
+```
+
+### Explanation of the Commands
+- kubectl get rolebinding dev-user-binding -n dev -o yaml retrieves the complete YAML manifest for the specified role binding, showing all configuration details including the role reference (pod-reader), the subject reference (dev-user service account), and metadata such as creation timestamp and resource version, providing complete visibility into the RBAC configuration.
+
+### Evidence
+![Verification command output](screenshots/session%20b%20verification%20command.png)
+
+### Notes
+The verification command successfully displayed the complete RoleBinding configuration, confirming that all RBAC components are correctly connected. The YAML output shows the binding between the pod-reader role and the dev-user service account within the dev namespace, providing auditable proof of the security configuration. In compliance and security audit scenarios, this type of verification command output would be collected and preserved as evidence that proper access controls are implemented. Additionally, these YAML definitions can be stored in version control systems as infrastructure-as-code, enabling teams to track changes to security policies over time and implement security configurations consistently across multiple clusters.
+
+---
+
 ## Pre-Lab Verification Checklist
 The following checklist was verified based on the lab results and screenshots:
 
+**Session A (Week 1) - LocalStack IAM:**
 - [✓] Docker installed and verified.
 - [✓] Docker version confirmed and Docker daemon running.
 - [✓] LocalStack container started successfully.
@@ -384,12 +617,29 @@ The following checklist was verified based on the lab results and screenshots:
 - [✓] New access key created for analyst user.
 - [✓] Old access key deactivated to demonstrate rotation.
 
+**Session B (Week 2) - Kubernetes RBAC:**
+- [✓] Kind tool available for creating local Kubernetes cluster.
+- [✓] Kubernetes cluster created and verified operational.
+- [✓] Cluster nodes confirmed healthy and ready.
+- [✓] Development namespace created for environment isolation.
+- [✓] Production namespace created for environment separation.
+- [✓] Service account created in dev namespace.
+- [✓] RBAC role created with read-only pod permissions.
+- [✓] Role binding created connecting role to service account.
+- [✓] Access control tested with kubectl auth can-i commands.
+- [✓] List pods permission verified (allowed in dev namespace).
+- [✓] Delete pods permission tested (denied as expected).
+- [✓] Cross-namespace access tested (denied in prod namespace).
+- [✓] Role binding configuration retrieved and verified.
+- [✓] Complete RBAC implementation documented with evidence.
+
 ---
 
 ## Summary Table
 
 | Item | Tool / Service | Version / Details | Status | Evidence |
 |---|---|---|---|---|
+| **Session A (Week 1) - LocalStack IAM** |||||
 | Container runtime | Docker | Docker Desktop (latest version) | Completed | screenshots/02-docker-version.png |
 | Local AWS platform | LocalStack | LocalStack container running on port 4566 | Completed | screenshots/03-start-localstack.png, screenshots/04-localstack-healthy.png |
 | Cloud CLI | AWS CLI v2 | Configured for LocalStack with endpoint http://localhost:4566 | Completed | screenshots/01-aws-configure.png |
@@ -402,26 +652,59 @@ The following checklist was verified based on the lab results and screenshots:
 | Access key listing | IAM access keys | Listed keys for analyst user | Completed | screenshots/13-task4-list-access-keys.png |
 | Key creation | New access key | Generated new access key for analyst | Completed | screenshots/14-task4-create-access-key.png |
 | Key rotation | Key deactivation | Deactivated old access key | Completed | screenshots/15-task4-deactivate-key.png |
+| **Session B (Week 2) - Kubernetes RBAC** |||||
+| Local K8s cluster | kind | Kubernetes IN Docker cluster "ccse-lab1" | Completed | screenshots/session b create the cluster.png, screenshots/session b confirm the cluster is up.png |
+| Dev namespace | Kubernetes namespace | Created "dev" namespace for development | Completed | screenshots/session b task 5- seperate environments with namespace 1.png |
+| Prod namespace | Kubernetes namespace | Created "prod" namespace for production | Completed | screenshots/session b task5- seperate environments with namespace 2.png |
+| Service account | K8s ServiceAccount | Created "dev-user" in dev namespace | Completed | screenshots/session b task 6 create a service account.png |
+| RBAC Role | K8s Role | Created "pod-reader" with list/get pod permissions | Completed | screenshots/session b task 6 create a role.png |
+| Role binding | K8s RoleBinding | Bound pod-reader role to dev-user | Completed | screenshots/session b task 6 bind the role.png |
+| Access control test | kubectl auth can-i | Verified RBAC enforcement (allow/deny tests) | Completed | screenshots/session b task 7 test that access control works.png |
+| RBAC verification | RoleBinding YAML | Retrieved complete binding configuration | Completed | screenshots/session b verification command.png |
 
 ---
 
 ## Challenges Encountered
-During the implementation of this lab, several challenges were encountered and successfully resolved:
+During the implementation of this lab across both sessions, several challenges were encountered and successfully resolved:
+
+**Session A Challenges (LocalStack IAM):**
 - Ensuring that the --endpoint-url flag was consistently included in every AWS CLI command to direct requests to LocalStack rather than attempting to connect to the real AWS cloud. This required careful attention to command syntax throughout all tasks.
 - Understanding the difference between attaching policies to groups versus attaching them directly to users, and recognizing when each approach is most appropriate for different organizational scenarios.
 - Managing the timing of access key operations to ensure that new keys were created before old keys were deactivated, following proper rotation procedures that prevent service interruption.
 - Verifying that LocalStack was fully initialized and the IAM service was healthy before executing IAM commands, as premature commands could fail if services were not yet ready.
 - Documenting each step with appropriate screenshots that clearly showed the command execution and its results, requiring careful terminal window management and screen capture timing.
 
+**Session B Challenges (Kubernetes RBAC):**
+- Understanding the relationship between Roles, RoleBindings, and ServiceAccounts as three distinct components that must be correctly connected to implement working access controls.
+- Properly formatting the service account identifier in the fully qualified format (system:serviceaccount:namespace:name) for use in authorization testing commands.
+- Recognizing that Roles and RoleBindings are namespace-scoped resources, meaning they must be created in the namespace where they will be used and cannot grant permissions across namespaces.
+- Distinguishing between authentication (proving identity) and authorization (granting permissions), understanding that creating a service account only establishes identity but does not grant any permissions until a role is bound to it.
+- Testing access controls using kubectl auth can-i commands to verify policies without making actual changes to resources, which requires understanding the --as flag for impersonation testing.
+
 ## Lessons Learned
-This lab reinforced several important concepts and best practices in cloud identity and access management:
+This lab reinforced several important concepts and best practices in cloud identity and access management across both cloud platforms and container orchestration:
+
+**Session A Lessons (LocalStack IAM):**
 - The principle of least privilege is fundamental to cloud security and should be applied by granting users only the permissions they need to perform their specific job functions, nothing more.
 - Group-based access control significantly simplifies permission management at scale and should be the preferred method for assigning permissions rather than attaching policies directly to individual users.
 - The root account should never be used for daily operations; instead, administrative users should be created with appropriate permissions and individual accountability.
 - Access key lifecycle management is critical for security, including regular rotation, secure storage, and prompt deactivation or deletion of old keys.
 - IAM is a free service in AWS, making it a zero-cost security investment that provides substantial protection value.
 - Testing IAM configurations in a local environment like LocalStack enables safe experimentation and learning without risk of affecting production resources or incurring cloud costs.
-- Proper documentation with clear commands and visual evidence is essential for security auditing, knowledge transfer, and troubleshooting.
+
+**Session B Lessons (Kubernetes RBAC):**
+- Kubernetes RBAC provides fine-grained access control by separating identity (ServiceAccounts) from permissions (Roles) and connecting them through bindings (RoleBindings).
+- Namespaces provide logical isolation within a single cluster, enabling multi-tenant environments where different teams or applications are separated by security boundaries.
+- The principle of least privilege applies equally to Kubernetes as to cloud IAM—service accounts should receive only the minimum permissions required for their function.
+- Testing access controls using kubectl auth can-i is essential for verifying that RBAC policies are correctly configured before deploying applications or granting user access.
+- Role-based access control scales better than individual permission grants because roles can be reused across multiple identities and changed centrally to affect all bound subjects.
+- Namespace-scoped RBAC (Roles and RoleBindings) provides better security than cluster-scoped RBAC (ClusterRoles and ClusterRoleBindings) by limiting the blast radius of permissions.
+
+**Cross-Platform Lessons:**
+- Both AWS IAM and Kubernetes RBAC implement the same security principles (least privilege, separation of concerns, explicit deny by default) but with different terminology and mechanisms.
+- Local development environments (LocalStack for AWS, kind for Kubernetes) are invaluable for learning security concepts safely without cloud costs or production risks.
+- Proper documentation with clear commands and visual evidence is essential for security auditing, knowledge transfer, and troubleshooting in both cloud and container environments.
+- Identity and access management is a critical security foundation regardless of platform—whether managing cloud resources or container workloads.
 
 ## References
 - AWS IAM Documentation: https://docs.aws.amazon.com/IAM/latest/UserGuide/
@@ -434,6 +717,18 @@ This lab reinforced several important concepts and best practices in cloud ident
 - AWS Access Key Management: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
 - IAM Policy Simulator: https://policysim.aws.amazon.com/
 - AWS Well-Architected Framework - Security Pillar: https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html
+- Kubernetes Documentation: https://kubernetes.io/docs/
+- Kubernetes RBAC Documentation: https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+- Kubernetes Namespace Documentation: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+- Kind (Kubernetes IN Docker) Documentation: https://kind.sigs.k8s.io/
+- Kubectl Command Reference: https://kubernetes.io/docs/reference/kubectl/
+- Kubernetes Service Accounts: https://kubernetes.io/docs/concepts/security/service-accounts/
+- Kubernetes Security Best Practices: https://kubernetes.io/docs/concepts/security/
+- RBAC Authorization Mode: https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 
 ## Conclusion
-The Cloud Account Security and IAM lab was completed successfully with all objectives achieved. The lab provided comprehensive hands-on experience with fundamental IAM concepts including user provisioning, group-based access control, policy attachment, and access key lifecycle management. All tasks were executed in a safe local environment using LocalStack, which eliminated the risk of affecting production resources while providing realistic AWS API behavior. The implementation demonstrated critical security best practices such as the principle of least privilege, separation of administrative and read-only access, group-based permission management, and secure credential rotation. Through systematic execution of IAM commands and careful documentation with screenshots, this lab established a strong foundation for managing cloud identities and implementing access control policies in cloud computing environments. The skills and knowledge gained from this lab are directly applicable to real-world cloud security implementations and will support continued learning in cloud computing security essentials.
+The Cloud Account Security and IAM lab was completed successfully across two comprehensive sessions, with all objectives achieved in both cloud identity management and container access control. Session A provided hands-on experience with AWS Identity and Access Management concepts using LocalStack, including user provisioning, group-based access control, policy attachment, and access key lifecycle management. Session B extended these security principles to Kubernetes environments, demonstrating namespace-based isolation, RBAC implementation with service accounts, roles, and role bindings, and comprehensive access control testing. Both sessions were executed in safe local environments—LocalStack for AWS and kind for Kubernetes—which eliminated the risk of affecting production resources while providing realistic platform behavior.
+
+The implementation demonstrated critical security best practices that apply across both cloud platforms and container orchestration systems: the principle of least privilege ensures identities receive only necessary permissions, separation of concerns divides identity from permissions with explicit bindings, group-based or role-based access control simplifies permission management at scale, and namespace or account isolation provides security boundaries between environments. Through systematic execution of IAM and RBAC commands with careful documentation using screenshots, this lab established a strong foundation for managing identities and implementing access controls in modern cloud computing and container environments.
+
+The skills and knowledge gained from both sessions are directly applicable to real-world security implementations across multiple platforms. Understanding IAM prepares students for managing cloud resources in AWS, Azure, or Google Cloud, while mastering Kubernetes RBAC is essential for securing containerized applications in production environments. The common security principles that underpin both systems—explicit permissions, least privilege, defense in depth, and continuous testing—form the foundation of cloud security engineering and will support continued learning and professional practice in cloud computing security essentials.
