@@ -79,13 +79,11 @@ LocalStack is a fully functional local cloud stack that emulates AWS services in
 ### Terminal Commands
 ```bash
 docker run -d --name localstack -p 4566:4566 localstack/localstack
-docker ps
 curl http://localhost:4566/_localstack/health
 ```
 
 ### Explanation of the Commands
 - docker run -d --name localstack -p 4566:4566 localstack/localstack starts a new LocalStack container in detached mode (-d), assigns it the name "localstack" for easier management, and maps port 4566 on the host to port 4566 in the container, which is the primary endpoint for all LocalStack services.
-- docker ps lists all currently running containers, confirming that the LocalStack container is active and operational.
 - curl http://localhost:4566/_localstack/health sends an HTTP GET request to LocalStack's health check endpoint, which returns the status of all simulated AWS services, confirming that the local cloud environment is ready to accept requests.
 
 ### Evidence
