@@ -597,6 +597,55 @@ The verification command successfully displayed the complete RoleBinding configu
 
 ---
 
+## Short-Answer Questions
+
+**Q1.** Why is attaching policies to groups better than attaching them directly to users?
+
+**Answer:**
+[To be completed]
+
+---
+
+**Q2.** What is the difference between an IAM User and an IAM Role?
+
+**Answer:**
+[To be completed]
+
+---
+
+**Q3.** Explain least privilege using the Analyst account, and how it reduces blast radius if compromised.
+
+**Answer:**
+[To be completed]
+
+---
+
+**Q4.** In Kubernetes, what is the difference between a Role and a RoleBinding?
+
+**Answer:**
+[To be completed]
+
+---
+
+**Q5.** Why did the developer service account fail to access prod, and which security principle does that demonstrate?
+
+**Answer:**
+[To be completed]
+
+---
+
+## Security Best-Practices Checklist
+
+The following security best practices were implemented and verified throughout this lab:
+
+- [✓] Root user is not used for daily tasks (a dedicated admin identity exists).
+- [✓] Permissions are granted via groups/roles, not directly to individual users.
+- [✓] At least one least-privilege (read-only) identity was created and tested.
+- [✓] Access keys were listed and a rotation (deactivate) was demonstrated.
+- [✓] Kubernetes RBAC blocks an unauthorised action (delete / cross-namespace).
+
+---
+
 ## Pre-Lab Verification Checklist
 The following checklist was verified based on the lab results and screenshots:
 
