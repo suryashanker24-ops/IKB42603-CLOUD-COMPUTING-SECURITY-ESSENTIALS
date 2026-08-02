@@ -602,35 +602,35 @@ The verification command successfully displayed the complete RoleBinding configu
 **Q1.** Why is attaching policies to groups better than attaching them directly to users?
 
 **Answer:**
-[To be completed]
+Attaching policies to a group means permissions are managed in one place instead of user-by-user. When you needed to grant admin rights, you attached AdministratorAccess once to the Admins group, and any user added to that group like (CloudAdmin_surya) automatically inherits those permissions. If policy requirements change later, you update the group once and every member is updated instead of having to individually edit dozens of users, which is error-prone and hard to audit at scale.
 
 ---
 
 **Q2.** What is the difference between an IAM User and an IAM Role?
 
 **Answer:**
-[To be completed]
+An IAM User is a permanent identity tied to a specific person or application, with long-term credentials (like the access keys you created for Analyst_surya). An IAM Role, by contrast, has no permanent credentials of its own and it's assumed temporarily by a user, application, or service to gain a specific set of permissions for a limited session, after which those permissions expire. Roles are preferred for reducing the risk of long-lived, potentially leaked credentials.
 
 ---
 
 **Q3.** Explain least privilege using the Analyst account, and how it reduces blast radius if compromised.
 
 **Answer:**
-[To be completed]
+The Analyst_surya user was only granted AmazonS3ReadOnlyAccess, meaning it can view S3 data but cannot modify, delete, or access any other AWS service. If this account's credentials were stolen, the attacker would be limited to read-only access on S3  they couldn't create new IAM users, delete resources, or pivot into other services. Compare this to the
 
 ---
 
 **Q4.** In Kubernetes, what is the difference between a Role and a RoleBinding?
 
 **Answer:**
-[To be completed]
+A Role defines what permissions exist a set of allowed actions (verbs like get, list, watch) on specific resources (like pods) within a namespace. It doesn't grant access to anyone by itself. A RoleBinding is what actually grants those permissions to a specific identity it connects the Role to a subject (a user, group, or service account like dev-user). In other words: the Role is the permission set, and the RoleBinding is the assignment of that permission set to someone.
 
 ---
 
 **Q5.** Why did the developer service account fail to access prod, and which security principle does that demonstrate?
 
 **Answer:**
-[To be completed]
+The dev-user service account's RoleBinding only exists in the dev namespace, bound to a Role that's also scoped to dev. Kubernetes RBAC is namespace-scoped by default, so those permissions simply don't extend into prod there's no Role or RoleBinding granting dev-user any access there. This demonstrates least privilege (and by extension, authorization boundaries): the identity was authenticated successfully, but authorization correctly blocked the action because it was never explicitly granted, even within the same cluster.
 
 ---
 
