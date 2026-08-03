@@ -95,7 +95,6 @@ Docker is a containerization platform that enables applications and services to 
 ### Terminal Commands
 ```bash
 docker --version
-docker info
 ```
 
 ### Explanation of the Commands
@@ -151,7 +150,6 @@ Configuring AWS CLI to work with LocalStack is an essential step because the AWS
 aws configure set aws_access_key_id test
 aws configure set aws_secret_access_key test
 aws configure set region us-east-1
-aws configure set output json
 aws --endpoint-url=http://localhost:4566 sts get-caller-identity
 ```
 
