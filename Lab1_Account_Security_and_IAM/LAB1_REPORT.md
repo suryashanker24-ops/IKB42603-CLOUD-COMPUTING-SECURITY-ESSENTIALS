@@ -95,7 +95,6 @@ Docker is a containerization platform that enables applications and services to 
 ### Terminal Commands
 ```bash
 docker --version
-docker info
 ```
 
 ### Explanation of the Commands
