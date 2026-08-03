@@ -165,7 +165,9 @@ aws --endpoint-url=http://localhost:4566 sts get-caller-identity
 - aws --endpoint-url=http://localhost:4566 sts get-caller-identity verifies the configuration by calling the Security Token Service (STS) to retrieve the caller identity, confirming that the CLI can successfully communicate with LocalStack.
 
 ### Evidence
-![AWS CLI configuration for LocalStack](screenshots/01-aws-configure.png)
+![AWS CLI configuration - Setting dummy credentials](screenshots/01-aws-configure.png)
+
+![AWS CLI verification - Testing LocalStack connection](screenshots/01b-aws-configure-2.png)
 
 ### Notes
 The AWS CLI was successfully configured to communicate with LocalStack using dummy credentials and the local endpoint. The get-caller-identity command confirmed that the CLI can successfully send requests to LocalStack and receive responses. Throughout this lab, all AWS CLI commands include the --endpoint-url=http://localhost:4566 flag to direct requests to LocalStack instead of the real AWS cloud.
@@ -341,49 +343,47 @@ The read-only analyst user was successfully created with appropriate limited per
 ---
 
 ## Step 7: Task 4 - Access Key Management
-Access keys are long-term credentials used for programmatic access to AWS services through the AWS CLI, SDKs, or APIs. While access keys are necessary for automation and application integration, they also present security risks if not managed properly. Compromised access keys can be used to access AWS resources from anywhere in the world, potentially leading to data breaches, resource abuse, or financial loss. Therefore, proper access key lifecycle management is critical for cloud security. This includes creating keys only when necessary, storing them securely, rotating them regularly, and deactivating or deleting old keys. In this task, the complete access key lifecycle was demonstrated, including listing existing keys, creating new keys, and deactivating old keys to simulate rotation.
+Access keys are long-term credentials used for programmatic access to AWS services through the AWS CLI, SDKs, or APIs. While access keys are necessary for automation and application integration, they also present security risks if not managed properly. Compromised access keys can be used to access AWS resources from anywhere in the world, potentially leading to data breaches, resource abuse, or financial loss. Therefore, proper access key lifecycle management is critical for cloud security. This includes creating keys only when necessary, storing them securely, rotating them regularly, and deactivating or deleting old keys. In this task, the complete access key lifecycle was demonstrated, including creating new keys, listing all keys for verification, and deactivating old keys to simulate rotation.
 
-### 7.1 List Existing Access Keys
-Before creating new access keys, it is important to check what keys already exist for a user. This helps prevent accumulation of unnecessary credentials and provides visibility into the current key configuration.
-
-#### Purpose
-- List all access keys associated with the analyst user.
-- Verify current key configuration before making changes.
-- Establish baseline for key management operations.
-
-#### Terminal Commands
-```bash
-aws --endpoint-url=http://localhost:4566 iam list-access-keys --user-name analyst
-```
-
-#### Explanation of the Commands
-- aws iam list-access-keys --user-name analyst retrieves a list of all access keys associated with the specified user, showing key IDs, creation dates, and current status (Active or Inactive), which provides complete visibility into programmatic credentials for that user.
-
-#### Evidence
-![Listing existing access keys](screenshots/13-task4-list-access-keys.png)
-
-### 7.2 Create New Access Key
-Creating a new access key generates a pair of credentials: an access key ID and a secret access key. These credentials can be used to authenticate API requests. The secret access key is only shown once at creation time and must be stored securely immediately.
+### 7.1 Create New Access Key for the Analyst
+Creating a new access key generates a pair of credentials: an access key ID and a secret access key. These credentials can be used to authenticate API requests and enable programmatic access to AWS services. The secret access key is only shown once at creation time and must be stored securely immediately.
 
 #### Purpose
-- Generate a new access key for programmatic access.
+- Generate a new access key for programmatic access to AWS services.
 - Obtain credentials for CLI or SDK authentication.
-- Demonstrate key creation process.
+- Enable the analyst user to interact with AWS APIs.
 
 #### Terminal Commands
 ```bash
 aws --endpoint-url=http://localhost:4566 iam create-access-key --user-name analyst
+```
+
+#### Explanation of the Commands
+- aws iam create-access-key --user-name analyst generates a new access key pair for the specified user and returns both the access key ID and secret access key in the response, which should be immediately saved to a secure location for use in programmatic access to AWS services.
+
+#### Evidence
+![Creating new access key](screenshots/13-task4-list-access-keys.png)
+
+### 7.2 List Access Keys
+After creating a new access key, it is important to list all keys associated with a user to verify the creation was successful and to see the current status of all credentials. This provides complete visibility into the programmatic credentials configured for the user.
+
+#### Purpose
+- List all access keys associated with the analyst user.
+- Verify that the new key was created successfully.
+- View the current status and configuration of all access keys.
+
+#### Terminal Commands
+```bash
 aws --endpoint-url=http://localhost:4566 iam list-access-keys --user-name analyst
 ```
 
 #### Explanation of the Commands
-- aws iam create-access-key --user-name analyst generates a new access key pair for the specified user and returns both the access key ID and secret access key in the response, which should be immediately saved to a secure location.
-- aws iam list-access-keys verifies that the new key was created successfully by listing all access keys for the user, including the newly created key with its Active status.
+- aws iam list-access-keys --user-name analyst retrieves a list of all access keys associated with the specified user, showing key IDs, creation dates, and current status (Active or Inactive), which provides complete visibility into programmatic credentials for that user and confirms successful key creation.
 
 #### Evidence
-![Creating new access key](screenshots/14-task4-create-access-key.png)
+![Listing access keys](screenshots/14-task4-create-access-key.png)
 
-### 7.3 Deactivate Old Access Key
+### 7.3 Deactivate Old Access Key (Rotation)
 Access key rotation is a critical security practice that involves creating a new key, updating all applications to use the new key, and then deactivating or deleting the old key. Deactivating a key (rather than immediately deleting it) provides a safety net in case the new key has not been properly deployed everywhere it is needed.
 
 #### Purpose
@@ -691,7 +691,7 @@ The following checklist was verified based on the lab results and screenshots:
 | **Session A (Week 1) - LocalStack IAM** |||||
 | Container runtime | Docker | Docker Desktop (latest version) | Completed | screenshots/02-docker-version.png |
 | Local AWS platform | LocalStack | LocalStack container running on port 4566 | Completed | screenshots/03-start-localstack.png, screenshots/04-localstack-healthy.png |
-| Cloud CLI | AWS CLI v2 | Configured for LocalStack with endpoint http://localhost:4566 | Completed | screenshots/01-aws-configure.png |
+| Cloud CLI | AWS CLI v2 | Configured for LocalStack with endpoint http://localhost:4566 | Completed | screenshots/01-aws-configure.png, screenshots/01b-aws-configure-2.png |
 | Admin group | IAM Group "Admins" | Created with AdministratorAccess policy attached | Completed | screenshots/06-task2-create-group-policy.png |
 | Admin user | IAM User "surya-admin" | Created and added to Admins group | Completed | screenshots/07-task2-create-admin-user.png, screenshots/08-task2-add-user-to-group.png |
 | Group membership | Admins group | Verified surya-admin membership | Completed | screenshots/09-task2-verify-membership.png |
@@ -781,3 +781,4 @@ The Cloud Account Security and IAM lab was completed successfully across two com
 The implementation demonstrated critical security best practices that apply across both cloud platforms and container orchestration systems: the principle of least privilege ensures identities receive only necessary permissions, separation of concerns divides identity from permissions with explicit bindings, group-based or role-based access control simplifies permission management at scale, and namespace or account isolation provides security boundaries between environments. Through systematic execution of IAM and RBAC commands with careful documentation using screenshots, this lab established a strong foundation for managing identities and implementing access controls in modern cloud computing and container environments.
 
 The skills and knowledge gained from both sessions are directly applicable to real-world security implementations across multiple platforms. Understanding IAM prepares students for managing cloud resources in AWS, Azure, or Google Cloud, while mastering Kubernetes RBAC is essential for securing containerized applications in production environments. The common security principles that underpin both systems—explicit permissions, least privilege, defense in depth, and continuous testing—form the foundation of cloud security engineering and will support continued learning and professional practice in cloud computing security essentials.
+
