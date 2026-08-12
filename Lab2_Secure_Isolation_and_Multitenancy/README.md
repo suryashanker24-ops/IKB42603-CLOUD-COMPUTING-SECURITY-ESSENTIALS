@@ -762,15 +762,6 @@ While this lab used a local kind cluster for safe experimentation, production im
 
 - **Audit Logging:** Kubernetes audit logs should be enabled and analyzed to track all API operations, providing forensic capability to investigate security incidents and prove compliance during audits.
 
-### Future Labs:
-
-This lab establishes the foundation for subsequent security topics:
-
-- **Lab 3 (Encryption & Key Management):** Will implement the cryptographic erasure concept introduced in Task 6, demonstrating encryption at rest, key management, and secure key deletion.
-
-- **Advanced NetworkPolicy:** Future exploration could include egress controls (limiting outbound traffic), allowing specific cross-namespace communication for legitimate integration, and implementing network segmentation within namespaces.
-
-- **Pod Security:** Additional labs could explore Pod Security Admission, seccomp profiles, AppArmor/SELinux policies, and runtime security tools like Falco to further strengthen compute isolation.
 
 ---
 
@@ -886,10 +877,4 @@ This lab was completed as part of the IKB42603 Cloud Computing Security Essentia
 ---
 
 **End of Report**
-
-**Lab Completion Date:** Week 4  
-**Status:** All tasks completed successfully with documented evidence  
-**Submitted by:** Surya Giri A/L Shanker  
-**Course:** IKB42603 Cloud Computing Security Essentials  
-**Institution:** UniKL MIIT
 
