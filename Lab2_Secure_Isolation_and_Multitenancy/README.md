@@ -601,7 +601,11 @@ This violates the principle of least privilege and creates compliance issues for
 
 **Answer:** The default-deny principle (also known as whitelisting or "deny by default, permit by exception") is a security architecture pattern where all actions are blocked unless explicitly allowed by policy rules. This is fundamentally more secure than default-allow (blacklisting) because it prevents unauthorized access through misconfiguration, overlooked rules, or unknown attack vectors. The NetworkPolicy we implemented demonstrates default-deny through its structure:
 
-
+```yaml
+spec:
+  podSelector: {}        # Applies to ALL pods in tenant-b
+  policyTypes: [Ingress] # Controls incoming traffic
+  # No ingress rules defined = deny all ingress
 ```
 
 By specifying `policyTypes: [Ingress]` but providing no `ingress:` rules section, this policy creates a deny-all-ingress posture. The empty `podSelector: {}` means this applies to every pod in the namespace, not just specific pods. Once this policy exists, ALL incoming traffic to tenant-b pods is blocked by default. To allow specific traffic (for example, from an ingress controller or monitoring system), additional NetworkPolicy resources with explicit `ingress:` rules would need to be created, implementing the "permit by exception" part. This was proven when the cross-tenant probe that returned HTTP 200 in Session A timed out after policy application in Session B, demonstrating effective enforcement.
@@ -758,6 +762,15 @@ While this lab used a local kind cluster for safe experimentation, production im
 
 - **Audit Logging:** Kubernetes audit logs should be enabled and analyzed to track all API operations, providing forensic capability to investigate security incidents and prove compliance during audits.
 
+### Future Labs:
+
+This lab establishes the foundation for subsequent security topics:
+
+- **Lab 3 (Encryption & Key Management):** Will implement the cryptographic erasure concept introduced in Task 6, demonstrating encryption at rest, key management, and secure key deletion.
+
+- **Advanced NetworkPolicy:** Future exploration could include egress controls (limiting outbound traffic), allowing specific cross-namespace communication for legitimate integration, and implementing network segmentation within namespaces.
+
+- **Pod Security:** Additional labs could explore Pod Security Admission, seccomp profiles, AppArmor/SELinux policies, and runtime security tools like Falco to further strengthen compute isolation.
 
 ---
 
@@ -873,4 +886,10 @@ This lab was completed as part of the IKB42603 Cloud Computing Security Essentia
 ---
 
 **End of Report**
+
+**Lab Completion Date:** Week 4  
+**Status:** All tasks completed successfully with documented evidence  
+**Submitted by:** Surya Giri A/L Shanker  
+**Course:** IKB42603 Cloud Computing Security Essentials  
+**Institution:** UniKL MIIT
 
