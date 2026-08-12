@@ -601,11 +601,7 @@ This violates the principle of least privilege and creates compliance issues for
 
 **Answer:** The default-deny principle (also known as whitelisting or "deny by default, permit by exception") is a security architecture pattern where all actions are blocked unless explicitly allowed by policy rules. This is fundamentally more secure than default-allow (blacklisting) because it prevents unauthorized access through misconfiguration, overlooked rules, or unknown attack vectors. The NetworkPolicy we implemented demonstrates default-deny through its structure:
 
-```yaml
-spec:
-  podSelector: {}        # Applies to ALL pods in tenant-b
-  policyTypes: [Ingress] # Controls incoming traffic
-  # No ingress rules defined = deny all ingress
+
 ```
 
 By specifying `policyTypes: [Ingress]` but providing no `ingress:` rules section, this policy creates a deny-all-ingress posture. The empty `podSelector: {}` means this applies to every pod in the namespace, not just specific pods. Once this policy exists, ALL incoming traffic to tenant-b pods is blocked by default. To allow specific traffic (for example, from an ingress controller or monitoring system), additional NetworkPolicy resources with explicit `ingress:` rules would need to be created, implementing the "permit by exception" part. This was proven when the cross-tenant probe that returned HTTP 200 in Session A timed out after policy application in Session B, demonstrating effective enforcement.
