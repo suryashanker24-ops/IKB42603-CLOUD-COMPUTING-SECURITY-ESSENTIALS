@@ -141,11 +141,11 @@ kubectl -n kube-system rollout status daemonset/calico-node --timeout=180s
 
 #### Evidence
 
-![Setup Cluster Creation](Setup%20Cluster%20%20with%20policy%20Enforcement%201.png)
+![Setup Cluster Creation](evidence/Setup%20Cluster%20%20with%20policy%20Enforcement%201.png)
 
 The screenshot shows the successful creation of the kind cluster with the control plane being prepared, nodes starting, and the kubectl context being set to "kind-ccse-lab2".
 
-![Calico Installation and Verification](Setup%20Cluster%20with%20policy%20Enforcement%202.png)
+![Calico Installation and Verification](evidence/Setup%20Cluster%20with%20policy%20Enforcement%202.png)
 
 The screenshot demonstrates the successful application of the Calico manifest with multiple CustomResourceDefinitions, ServiceAccounts, and other resources being created, followed by the successful rollout of the calico-node DaemonSet, confirming that NetworkPolicy enforcement is now enabled.
 
@@ -183,7 +183,7 @@ kubectl create namespace tenant-b
 
 ##### Evidence
 
-![Tenant Namespaces Created](Task%201%20Two%20tenants%20on%20One%20Cluster.png)
+![Tenant Namespaces Created](evidence/Task%201%20Two%20tenants%20on%20One%20Cluster.png)
 
 The screenshot confirms that both tenant-a and tenant-b namespaces were successfully created.
 
@@ -219,7 +219,7 @@ kubectl get pods,svc -n tenant-a
 
 ##### Evidence
 
-![Web Server Deployments](Task%201%20Deploy%20a%20simple%20web%20server%20for%20each%20tenant.png)
+![Web Server Deployments](evidence/Task%201%20Deploy%20a%20simple%20web%20server%20for%20each%20tenant.png)
 
 The screenshot shows the successful creation of deployments and services in both namespaces, with the final output displaying the running pod and service in tenant-a, including the ClusterIP address (10.96.111.229) that will be used for connectivity testing.
 
@@ -259,11 +259,11 @@ kubectl -n tenant-a run probe --rm -it --image=curlimages/curl --restart=Never \
 
 #### Evidence
 
-![Tenant-B Service IP](Task%202%20Observe%20the%20Default-Open%20Risk%201.png)
+![Tenant-B Service IP](evidence/Task%202%20Observe%20the%20Default-Open%20Risk%201.png)
 
 The screenshot shows the retrieval of tenant-b's service ClusterIP address (10.96.253.95), which will be used as the target for the cross-tenant connectivity test.
 
-![Cross-Tenant Access Succeeds](Task%202%20Observe%20the%20Default-Open%20Risk%202.png)
+![Cross-Tenant Access Succeeds](evidence/Task%202%20Observe%20the%20Default-Open%20Risk%202.png)
 
 The screenshot demonstrates that the probe pod from tenant-a successfully connected to tenant-b's web service, receiving an HTTP 200 OK response, proving that cross-tenant network communication is allowed by default and confirming the security risk.
 
@@ -312,11 +312,11 @@ kubectl describe resourcequota tenant-a-quota -n tenant-a
 
 #### Evidence
 
-![ResourceQuota Creation](Task%203%20Contain%20the%20Noisy%20Neighbour%201.png)
+![ResourceQuota Creation](evidence/Task%203%20Contain%20the%20Noisy%20Neighbour%201.png)
 
 The screenshot shows the successful creation of the ResourceQuota named "tenant-a-quota" in the tenant-a namespace.
 
-![ResourceQuota Details](Task%203%20Contain%20the%20Noisy%20Neighbour%202.png)
+![ResourceQuota Details](evidence/Task%203%20Contain%20the%20Noisy%20Neighbour%202.png)
 
 The screenshot displays the detailed ResourceQuota configuration showing the hard limits (pods: 5, requests.cpu: 1, requests.memory: 512Mi) and the current usage (pods: 1, requests.cpu: 0, requests.memory: 0), confirming that the quota is active and tracking resource consumption.
 
@@ -370,11 +370,11 @@ kubectl -n tenant-a run probe --rm -it --image=curlimages/curl --restart=Never \
 
 #### Evidence
 
-![NetworkPolicy Creation](Task%204%20Default-Deny%20Network%20Isolation%201.png)
+![NetworkPolicy Creation](evidence/Task%204%20Default-Deny%20Network%20Isolation%201.png)
 
 The screenshot shows the successful creation of the "default-deny-ingress" NetworkPolicy in tenant-b namespace.
 
-![Cross-Tenant Access Blocked](Task%204%20Default-Deny%20Network%20Isolation%202.png)
+![Cross-Tenant Access Blocked](evidence/Task%204%20Default-Deny%20Network%20Isolation%202.png)
 
 The screenshot demonstrates that the probe pod from tenant-a now times out when attempting to connect to tenant-b's service, with the error message "timed out waiting for the condition" indicating that the NetworkPolicy successfully blocked the connection that previously succeeded in Task 2.
 
@@ -418,7 +418,7 @@ kubectl -n tenant-b create secret generic data --from-literal=value=SECRET_B
 
 ##### Evidence
 
-![Secrets Created](Task%205%20Storage%20&%20Secret%20Isolation%201.png)
+![Secrets Created](evidence/Task%205%20Storage%20&%20Secret%20Isolation%201.png)
 
 The screenshot confirms that both secrets were successfully created in their respective namespaces.
 
@@ -450,7 +450,7 @@ kubectl -n tenant-a create rolebinding rb --role=reader --serviceaccount=tenant-
 
 ##### Evidence
 
-![RBAC Configuration](Task%205%20Storage%20&%20Secret%20Isolation%202.png)
+![RBAC Configuration](evidence/Task%205%20Storage%20&%20Secret%20Isolation%202.png)
 
 The screenshot shows the successful creation of the service account, role, and role binding in tenant-a namespace.
 
@@ -481,7 +481,7 @@ kubectl auth can-i get secrets -n tenant-b --as=$SA  # expect: no
 
 ##### Evidence
 
-![Authorization Test Results](Task%205%20Storage%20&%20Secret%20Isolation%203.png)
+![Authorization Test Results](evidence/Task%205%20Storage%20&%20Secret%20Isolation%203.png)
 
 The screenshot confirms that the authorization tests returned the expected results: "yes" for tenant-a (access granted) and "no" for tenant-b (access denied), proving that RBAC correctly enforces storage isolation between tenants.
 
@@ -528,7 +528,7 @@ docker run --rm -v ccse-vol:/data alpine sh -c \
 
 #### Evidence
 
-![Data Remanence and Secure Deletion](Task%206%20Data%20Remanence%20&%20Secure%20Deletion.png)
+![Data Remanence and Secure Deletion](evidence/Task%206%20Data%20Remanence%20&%20Secure%20Deletion.png)
 
 The screenshot shows the execution of both commands. The first command demonstrates that the "SENSITIVE-PATIENT-RECORD" data was not found after normal deletion (scan-done appears without grep results, though in some cases remnants might be detected). The second command shows the secure wipe process with dd successfully overwriting 1024 bytes (1.0KB) and the wiped confirmation, demonstrating proper secure deletion.
 
@@ -564,7 +564,7 @@ kubectl describe resourcequota tenant-a-quota -n tenant-a
 
 ### Evidence
 
-![Verification Commands Output](Verification%20Command.png)
+![Verification Commands Output](evidence/Verification%20Command.png)
 
 The screenshot shows the successful execution of both verification commands. The NetworkPolicy listing confirms that "default-deny-ingress" is active in tenant-b namespace with age 62 minutes. The ResourceQuota description shows that tenant-a-quota is configured with hard limits of 5 pods, 1 CPU, and 512Mi memory, with current usage of 1 pod and 0 CPU/memory requests.
 
@@ -892,3 +892,4 @@ This lab was completed as part of the IKB42603 Cloud Computing Security Essentia
 **Submitted by:** Surya Giri A/L Shanker  
 **Course:** IKB42603 Cloud Computing Security Essentials  
 **Institution:** UniKL MIIT
+
