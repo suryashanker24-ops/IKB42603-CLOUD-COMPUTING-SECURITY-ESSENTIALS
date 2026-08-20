@@ -100,10 +100,10 @@ diff record.txt record.dec.txt && echo 'MATCH: decryption successful'
 
 ### Evidence and Result
 
-- [Sample sensitive record](<evidence/Task 1 create a sample sensitive record.png>) shows the patient record before encryption.
-- [AES-256 encryption](<evidence/Task 1 encrypt with aes-256.png>) shows the encryption command and password prompt.
-- [Unreadable ciphertext](<evidence/Task 1 prove its inreadable.png>) shows that `record.enc` contains non-readable encrypted data.
-- [Successful decryption](<evidence/Task 1 Decrypt back.png>) shows that the decrypted file matched `record.txt`.
+- ![Sample sensitive record](<evidence/Task 1 create a sample sensitive record.png>) shows the patient record before encryption.
+- ![AES-256 encryption](<evidence/Task 1 encrypt with aes-256.png>) shows the encryption command and password prompt.
+- ![Unreadable ciphertext](<evidence/Task 1 prove its inreadable.png>) shows that `record.enc` contains non-readable encrypted data.
+- ![Successful decryption](<evidence/Task 1 Decrypt back.png>) shows that the decrypted file matched `record.txt`.
 
 ### Notes
 
@@ -136,7 +136,7 @@ openssl rsa -in private.pem -pubout -out public.pem
 
 #### Evidence
 
-[RSA key-pair generation](<evidence/Task 2 generate 2048-bit key pair.png>) shows successful private- and public-key creation.
+![RSA key-pair generation](<evidence/Task 2 generate 2048-bit key pair.png>) shows successful private- and public-key creation.
 
 ### 2.2 Encrypt with the Public Key and Decrypt with the Private Key
 
@@ -162,7 +162,7 @@ diff record.txt record.rsa.txt && echo 'MATCH: RSA decryption successful'
 
 #### Evidence and Result
 
-[RSA encryption and decryption](<evidence/Task 2 encrypt with public key, decrypt with private key.png>) shows successful recovery and the message `MATCH: RSA decryption successful`.
+![RSA encryption and decryption](<evidence/Task 2 encrypt with public key, decrypt with private key.png>) shows successful recovery and the message `MATCH: RSA decryption successful`.
 
 ### 2.3 Sign and Verify the Record
 
@@ -186,7 +186,7 @@ openssl dgst -sha256 -verify public.pem -signature record.sig record.txt
 
 #### Evidence and Result
 
-[Digital-signature verification](<evidence/Task 2 Sign in with the private key, verify with the public key.png>) shows OpenSSL returning `Verified OK`.
+![Digital-signature verification](<evidence/Task 2 Sign in with the private key, verify with the public key.png>) shows OpenSSL returning `Verified OK`.
 
 ### Notes
 
@@ -234,9 +234,9 @@ docker stop tls
 
 ### Evidence and Result
 
-- [Self-signed certificate generation](<evidence/Task 3 generate a self-signed certificate.png>) shows the certificate and key creation.
-- [HTTPS service on port 8443](<evidence/Task 3 serve https on port 8443.png>) shows the Nginx container being started with the TLS materials mounted read-only.
-- [TLS connection test](<evidence/Task 3 connect over TLS.png>) shows that the HTTPS request returned the sensitive record successfully.
+- ![Self-signed certificate generation](<evidence/Task 3 generate a self-signed certificate.png>) shows the certificate and key creation.
+- ![HTTPS service on port 8443](<evidence/Task 3 serve https on port 8443.png>) shows the Nginx container being started with the TLS materials mounted read-only.
+- ![TLS connection test](<evidence/Task 3 connect over TLS.png>) shows that the HTTPS request returned the sensitive record successfully.
 
 ### Notes
 
@@ -276,8 +276,8 @@ aws $EP kms encrypt --key-id $KEY_A \
 
 ### Evidence and Result
 
-- [Tenant-A KMS key creation](<evidence/Task 4 Create and use a KMS master key 1.png>) shows an enabled `ENCRYPT_DECRYPT` symmetric customer-managed key.
-- [Direct KMS encryption](<evidence/Task 4 encrypt a small secret directly with KMS.png>) shows the ciphertext blob returned for the value `hello`.
+- ![Tenant-A KMS key creation](<evidence/Task 4 Create and use a KMS master key 1.png>) shows an enabled `ENCRYPT_DECRYPT` symmetric customer-managed key.
+- ![Direct KMS encryption](<evidence/Task 4 encrypt a small secret directly with KMS.png>) shows the ciphertext blob returned for the value `hello`.
 
 ### Notes
 
@@ -313,7 +313,7 @@ aws $EP kms generate-data-key --key-id $KEY_A --key-spec AES_256 \
 
 #### Evidence
 
-[KMS data-key generation](<evidence/Task 5.1 Ask the KMS for a data key.png>) shows KMS returning a plaintext data key and its encrypted KMS-wrapped form.
+![KMS data-key generation](<evidence/Task 5.1 Ask the KMS for a data key.png>) shows KMS returning a plaintext data key and its encrypted KMS-wrapped form.
 
 ### 5.2 Encrypt the File with the Data Key
 
@@ -340,7 +340,7 @@ openssl enc -aes-256-cbc -pbkdf2 -in record.txt -out record.env.enc \
 
 #### Evidence
 
-[File encryption with the data key](<evidence/Task 5.2 Encrypt the big file.png>) shows the local encryption of the record using the generated data key.
+![File encryption with the data key](<evidence/Task 5.2 Encrypt the big file.png>) shows the local encryption of the record using the generated data key.
 
 ### 5.3 Destroy Plaintext Data-Key Material
 
@@ -361,7 +361,7 @@ rm datakey.bin datakey.b64
 
 #### Evidence and Result
 
-[Plaintext data-key removal](<evidence/Task 5.3 Destroy the plaintext data key.png>) confirms that only the KMS-wrapped data key remains.
+![Plaintext data-key removal](<evidence/Task 5.3 Destroy the plaintext data key.png>) confirms that only the KMS-wrapped data key remains.
 
 ### Notes
 
@@ -393,7 +393,7 @@ The command creates a second symmetric customer-managed key. Assigning it to `KE
 
 #### Evidence
 
-[Tenant-B KMS key](<evidence/Task 6 seperate key for tenant b.png>) shows the separate enabled KMS key created for tenant B.
+![Tenant-B KMS key](<evidence/Task 6 seperate key for tenant b.png>) shows the separate enabled KMS key created for tenant B.
 
 ### 6.2 Schedule Deletion of Tenant A's Key
 
@@ -414,7 +414,7 @@ aws $EP kms schedule-key-deletion --key-id $KEY_A --pending-window-in-days 7
 
 #### Evidence and Result
 
-[Scheduled key deletion](<evidence/Task 6 schedule deletion of tenant A key.png>) shows `KeyState: PendingDeletion`, a seven-day window, and a scheduled deletion date.
+![Scheduled key deletion](<evidence/Task 6 schedule deletion of tenant A key.png>) shows `KeyState: PendingDeletion`, a seven-day window, and a scheduled deletion date.
 
 ### 6.3 Observe the Effect of the Key State
 
@@ -432,8 +432,8 @@ aws $EP kms decrypt --ciphertext-blob fileb://datakey.enc 2>&1 | head -3
 
 #### Evidence
 
-- [Disable attempt after deletion scheduling](<evidence/Task 6 Disable immediately.png>) records the expected invalid-state error.
-- [Blocked unwrap/decrypt attempt](<evidence/Task 6 attempt to unwrap tenant A data key.png>) records the invalid-state error when attempting to decrypt with the pending-deletion key.
+- ![Disable attempt after deletion scheduling](<evidence/Task 6 Disable immediately.png>) records the expected invalid-state error.
+- ![Blocked unwrap/decrypt attempt](<evidence/Task 6 attempt to unwrap tenant A data key.png>) records the invalid-state error when attempting to decrypt with the pending-deletion key.
 
 ### Notes
 
@@ -482,8 +482,8 @@ openssl dgst -sha256 -verify public.pem -signature record.sig record.txt
 
 ### Evidence and Result
 
-- [Hash comparison and audit chain](<evidence/Task 7.png>) shows distinct SHA-256 values for `record.txt` and the tampered copy, followed by chained hashes for the audit events.
-- [Final verification](<evidence/Verification Command.png>) shows the available KMS keys and OpenSSL returning `Verified OK` for the original record's signature.
+- ![Hash comparison and audit chain](<evidence/Task 7.png>) shows distinct SHA-256 values for `record.txt` and the tampered copy, followed by chained hashes for the audit events.
+- ![Final verification](<evidence/Verification Command.png>) shows the available KMS keys and OpenSSL returning `Verified OK` for the original record's signature.
 
 ### Notes
 
@@ -544,6 +544,7 @@ These techniques are directly applicable to cloud databases, object storage, bac
 - **Submitted by:** Surya Giri A/L Shanker
 - **Course:** IKB42603 Cloud Computing Security Essentials
 - **Institution:** UniKL MIIT
+
 
 
 
