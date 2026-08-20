@@ -200,11 +200,7 @@ The screenshot shows the decryption command execution with password prompt, foll
 
 #### Notes
 
-The symmetric encryption task successfully demonstrated that AES-256-CBC with PBKDF2 and salt provides strong confidentiality protection for sensitive data at rest. The unreadable ciphertext proves that an attacker who obtains the encrypted file cannot access the protected health information without knowing the password. The successful decryption with matching output confirms that the encryption is reversible when the correct key is provided, meeting the fundamental requirement that authorized users can recover their encrypted data.
-
-However, this demonstration also reveals the key-distribution problem inherent in symmetric encryption: the same secret key (password) must be securely shared between all parties who need to encrypt or decrypt the data. In cloud environments or multi-user systems, securely distributing this shared secret becomes challenging—sending passwords over networks risks interception, storing passwords in code or configuration files creates exposure, and sharing passwords with many users increases the risk of compromise. This limitation motivates the need for asymmetric cryptography (demonstrated in Task 2) where different keys are used for encryption and decryption, and for centralized key management services (demonstrated in Session B) where keys are protected in hardware security modules and accessed through authenticated API calls rather than being directly distributed to applications.
-
-Production systems should also note that CBC mode requires proper initialization vector (IV) handling and is vulnerable to padding oracle attacks if not implemented carefully. Modern applications should consider using authenticated encryption modes like AES-GCM (Galois/Counter Mode) that provide both confidentiality and integrity protection, detecting tampering attempts that CBC mode alone cannot prevent.
+The symmetric encryption task successfully demonstrated that AES-256-CBC with PBKDF2 and salt provides strong confidentiality protection for sensitive data at rest. However, this also reveals the key-distribution problem: the same secret key must be securely shared between all parties who need to encrypt or decrypt data, which is challenging in cloud environments. This limitation motivates the need for asymmetric cryptography (Task 2) and centralized key management services (Session B). Production systems should consider using authenticated encryption modes like AES-GCM that provide both confidentiality and integrity protection.
 
 ---
 
@@ -327,23 +323,7 @@ The screenshot demonstrates the successful execution of the signing command that
 
 #### Notes
 
-The asymmetric cryptography tasks successfully demonstrated the complementary roles of public-key operations in providing both confidentiality and authenticity:
-
-**Encryption/Decryption (Confidentiality):**
-- Encrypt with PUBLIC key → Anyone can encrypt messages for the private key holder
-- Decrypt with PRIVATE key → Only the key holder can read the messages
-- Use case: Secure communication, key exchange, protecting secrets
-
-**Signing/Verification (Authentication & Integrity):**
-- Sign with PRIVATE key → Only the key holder can create valid signatures
-- Verify with PUBLIC key → Anyone can confirm the signature is authentic
-- Use case: Code signing, document authentication, non-repudiation, integrity checking
-
-The key insight is that asymmetric cryptography reverses the roles depending on the security goal: for confidentiality, the public key encrypts and the private key decrypts; for authenticity, the private key signs and the public key verifies. This dual capability makes asymmetric cryptography the foundation of many security systems including TLS/SSL (demonstrated in Task 3), PKI certificates, blockchain transactions, secure email (S/MIME, PGP), and software distribution.
-
-However, asymmetric operations are significantly slower than symmetric encryption (typically 100-1000x slower for RSA compared to AES), and RSA has message size limitations (can only encrypt data smaller than the key size minus padding overhead). For these reasons, production systems typically use hybrid cryptography: asymmetric encryption to exchange a symmetric session key, then symmetric encryption (AES) for bulk data protection—this pattern is exactly what envelope encryption (Session B) implements for cloud-scale key management.
-
-In production environments, private keys must be rigorously protected: stored with restrictive permissions (chmod 600), encrypted when at rest, ideally stored in hardware security modules (HSMs) or key management services, never transmitted over networks, and rotated periodically according to security policies. Public keys can be freely distributed but should be authenticated using certificates from trusted Certificate Authorities to prevent man-in-the-middle attacks where an attacker substitutes their own public key.
+The asymmetric cryptography tasks demonstrated how public-key operations provide both confidentiality (encrypt with public key, decrypt with private key) and authenticity (sign with private key, verify with public key). This dual capability makes RSA the foundation of TLS/SSL, PKI certificates, and secure communications. However, asymmetric operations are 100-1000x slower than AES and have message size limitations, which is why production systems use hybrid cryptography—asymmetric encryption for key exchange, then symmetric encryption for bulk data. This is exactly the pattern envelope encryption implements in Session B. In production, private keys must be protected with restrictive permissions, stored in HSMs, and never transmitted over networks.
 
 ---
 
@@ -413,29 +393,7 @@ The screenshot shows the curl command successfully retrieving the patient record
 
 #### Notes
 
-The TLS demonstration successfully showed that HTTPS protects data while it travels over networks, addressing the third dimension of data protection alongside encryption at rest (Task 1) and authentication/integrity (Task 2). When the curl command connected to https://localhost:8443, several security operations occurred behind the scenes:
-
-**TLS Handshake Process:**
-1. **Client Hello:** curl initiated a TLS connection and advertised supported cipher suites
-2. **Server Hello:** Nginx selected a cipher suite and sent its certificate (cert.pem)
-3. **Certificate Validation:** curl verified the certificate (skipped due to -k flag in this test)
-4. **Key Exchange:** Both parties established a shared symmetric session key using asymmetric cryptography
-5. **Encrypted Communication:** All subsequent HTTP traffic was encrypted with the session key using symmetric encryption (typically AES)
-
-The combination of asymmetric cryptography (for key exchange and authentication) and symmetric encryption (for bulk data protection) in TLS demonstrates the hybrid encryption pattern that maximizes both security and performance—the same pattern used in envelope encryption (Session B).
-
-**Comparing HTTP vs HTTPS:**
-- **Without TLS (HTTP):** The patient record would travel in plaintext, visible to anyone capturing network traffic with tools like Wireshark or tcpdump—this includes network administrators, ISP employees, compromised routers, or malicious actors performing man-in-the-middle attacks
-- **With TLS (HTTPS):** The patient record travels encrypted, appearing as random data to eavesdroppers—even if packets are captured, the sensitive medical information remains confidential and tampering is detected
-
-**Production Considerations:**
-- **Self-Signed Certificates:** The certificate used in this lab would trigger browser warnings ("Your connection is not private") in production because it's not signed by a trusted Certificate Authority—browsers maintain a list of trusted CAs and reject certificates that aren't in that trust chain
-- **Certificate Authorities:** Production systems should use certificates from trusted CAs like Let's Encrypt (free, automated), DigiCert, GlobalSign, or organizational internal CAs for enterprise intranets
-- **Certificate Validation:** Production clients must always validate certificates (never use curl -k or equivalent) to prevent man-in-the-middle attacks where attackers present fraudulent certificates
-- **TLS Configuration:** Production servers should use strong cipher suites (TLS 1.2 or 1.3), disable obsolete protocols (SSL 3.0, TLS 1.0, TLS 1.1), implement HTTP Strict Transport Security (HSTS) headers, and use Perfect Forward Secrecy (PFS) cipher suites
-- **Certificate Management:** Certificates must be renewed before expiration, private keys must be protected with restrictive permissions, and certificate transparency logs should be monitored for unauthorized certificate issuance
-
-This completes Session A, where the fundamental building blocks of data protection were established: AES for protecting data at rest, RSA for public-key operations and signatures, and TLS for protecting data in transit. Session B will extend these concepts into cloud-scale key management using KMS and envelope encryption.
+The TLS demonstration successfully showed how HTTPS protects data in transit, addressing the third dimension of data protection alongside encryption at rest and authentication. During the TLS handshake, asymmetric cryptography establishes a shared symmetric session key, then symmetric encryption protects HTTP traffic—demonstrating the hybrid encryption pattern. Self-signed certificates work for testing but production systems must use certificates from trusted Certificate Authorities to prevent man-in-the-middle attacks. Production TLS configuration should use strong cipher suites (TLS 1.2 minimum, TLS 1.3 preferred), implement HSTS headers, and ensure proper certificate validation. This completes Session A, establishing the cryptographic foundations that Session B will extend into cloud-scale key management.
 
 ---
 
@@ -498,11 +456,7 @@ The screenshot demonstrates the execution of the KMS encrypt command showing the
 
 #### Notes
 
-The KMS master key creation task successfully demonstrated several critical concepts in cloud key management. Unlike the local file-based keys from Session A (private.pem, key.pem), this KMS key exists only within the LocalStack KMS service, and the actual key material is never exposed to the client application. The KeyId serves as a reference handle that allows applications to request cryptographic operations (encrypt, decrypt, generate data keys) without ever possessing the master key itself—this separation of key use from key possession is fundamental to secure key management.
-
-The direct encryption of "hello" demonstrates that KMS can encrypt small secrets directly, but this approach has important limitations: the KMS Encrypt API has a maximum plaintext size of 4 KB, making it unsuitable for encrypting files, database records, or other large data objects. Additionally, every encryption and decryption operation requires an API call to KMS, which introduces latency and generates audit log entries—for high-volume applications or large datasets, this would create performance bottlenecks and excessive audit log volume.
-
-For these reasons, production systems rarely encrypt large amounts of data directly with KMS. Instead, they use the envelope encryption pattern (demonstrated in Task 5) where KMS encrypts only the data encryption keys (DEKs), and the DEKs are used locally to encrypt actual data with fast symmetric encryption (AES). This hybrid approach provides the security benefits of centralized key management while maintaining the performance characteristics necessary for real-world applications handling gigabytes or terabytes of data.
+The KMS master key creation demonstrated that centralized key management removes key material from applications—the KeyId serves as a reference handle, but the actual key bytes never leave the KMS HSM. Direct encryption of small secrets works for passwords or API keys (up to 4 KB), but the real power of KMS is enabling envelope encryption (Task 5) for large data. Every KMS operation is logged for audit trails, and IAM policies control who can use keys. Production systems rarely encrypt data directly with KMS due to size limitations and performance concerns; instead, they use the envelope encryption pattern that combines KMS security with local encryption performance.
 
 ---
 
@@ -617,30 +571,7 @@ The screenshot shows the execution of the rm command removing both plaintext key
 
 #### Notes
 
-The envelope encryption task successfully demonstrated the complete workflow that production cloud systems use to encrypt data at scale. This three-step pattern (generate data key, encrypt data locally, destroy plaintext key) provides the optimal balance of security, performance, and scalability:
-
-**Security Benefits:**
-- Master keys never leave the KMS HSM—only the KMS service possesses the actual key material
-- Data encryption keys are cryptographically random rather than derived from potentially weak passwords
-- Plaintext keys exist only transiently during encryption/decryption operations
-- Access control is enforced through KMS IAM policies for every key unwrap operation
-- Comprehensive audit logging captures who accessed keys and when
-
-**Performance Benefits:**
-- Large data is encrypted locally with fast AES operations (no API latency)
-- No need to send entire datasets to KMS (saving network bandwidth)
-- Can encrypt gigabytes or terabytes of data with a single KMS API call (GenerateDataKey)
-- Decryption similarly requires only one API call (Decrypt) to unwrap the data key
-
-**Decryption Workflow (Not Shown in Lab but Important to Understand):**
-1. Retrieve the KMS-wrapped data key (datakey.enc) that was stored with the encrypted data
-2. Call `aws kms decrypt --ciphertext-blob fileb://datakey.enc` to unwrap the key (requires IAM permissions)
-3. KMS returns the plaintext data key (in memory only)
-4. Use the plaintext data key to decrypt the encrypted data with OpenSSL
-5. Destroy the plaintext data key immediately after decryption completes
-6. The decrypted data is now available for application use
-
-This pattern is implemented in all major cloud providers' encryption services (AWS S3 SSE-KMS, Azure Storage SSE, Google Cloud Storage CMEK), database encryption systems (AWS RDS, DynamoDB, Azure SQL TDE), and backup solutions, demonstrating that envelope encryption is the industry-standard approach to cloud-scale data protection. The key management separation—master keys in HSMs, data keys generated on-demand, plaintext keys only in memory—provides defense-in-depth where multiple security controls must fail before data is exposed.
+The envelope encryption task demonstrated the industry-standard pattern for cloud-scale data protection. This three-step workflow (generate data key, encrypt locally, destroy plaintext key) provides optimal balance: master keys stay in HSMs, data encryption is fast and local, plaintext keys exist only transiently, and access control is enforced through KMS. To decrypt later, retrieve the wrapped key, call KMS Decrypt to unwrap it, use the plaintext key to decrypt data, then destroy it immediately. This pattern is implemented in all major cloud providers' encryption services (AWS S3 SSE-KMS, Azure Storage, Google Cloud Storage CMEK) because it's the only approach that scales from gigabytes to exabytes while maintaining strong security guarantees.
 
 ---
 
@@ -753,29 +684,7 @@ The screenshot demonstrates the decrypt command failing with KMSInvalidStateExce
 
 #### Notes
 
-The per-tenant key isolation and cryptographic erasure demonstration successfully showed why multi-tenant systems should use separate encryption keys per customer and how key lifecycle management enables secure data deletion in cloud environments. Several critical security and operational concepts were illustrated:
-
-**Per-Tenant Key Benefits:**
-- **Blast Radius Limitation:** If tenant-A's key is compromised, tenant-B's data remains protected by a separate independent key
-- **Selective Access Control:** IAM policies can grant different users/roles access to different tenant keys based on organizational responsibilities
-- **Independent Lifecycle Management:** Tenant-A's key can be rotated, disabled, or deleted without affecting tenant-B's operations
-- **Compliance and Data Residency:** Different tenants can have keys in different regions or with different protection levels to meet varied regulatory requirements
-
-**Cryptographic Erasure vs Traditional Deletion:**
-Traditional file deletion (even with overwriting) faces challenges in cloud environments:
-- **Distributed Storage:** Cloud data is replicated across multiple storage devices and potentially multiple data centers—you cannot track or overwrite all physical copies
-- **Snapshots and Backups:** Point-in-time snapshots and backup systems may contain copies of deleted data that cannot be overwritten
-- **SSD Wear Leveling:** Modern SSDs use internal wear-leveling algorithms that relocate data blocks, making it impossible to guarantee that specific data has been overwritten
-- **No Physical Access:** Cloud tenants don't have physical access to storage hardware to perform DoD-standard multi-pass wipes or hardware destruction
-
-Cryptographic erasure solves all these problems elegantly:
-1. **All data is encrypted at rest** with per-tenant or per-object encryption keys
-2. **When deletion is required**, simply delete the encryption key from KMS
-3. **All encrypted data becomes cryptographically unrecoverable** even though the ciphertext (encrypted data) still exists on storage media
-4. **Deletion is immediate and provable** through KMS audit logs showing key deletion
-5. **No need to track or overwrite** physical storage blocks across distributed systems
-
-This is why GDPR "right to be forgotten" compliance, HIPAA secure disposal requirements, and PCI-DSS data retention policies are typically implemented using cryptographic erasure in cloud environments rather than traditional secure wiping methods. After the 7-day pending period expires (or if an administrator called CancelKeyDeletion), the master key is permanently destroyed in the KMS HSM, and the encrypted patient record (record.env.enc) becomes permanently and provably unrecoverable noise—even the cloud provider with full physical access to storage hardware cannot decrypt it.
+The per-tenant key isolation and cryptographic erasure demonstration showed why multi-tenant systems need separate encryption keys per customer. Per-tenant keys limit blast radius (compromised tenant-A key doesn't affect tenant-B), enable selective cryptographic erasure, and support independent access control. The scheduled deletion with 7-day pending window provides safety against accidental data loss, while the failed decrypt attempt proved that key lifecycle enforcement works—once the key enters PendingDeletion, all envelope-encrypted data becomes permanently unrecoverable. This achieves provable deletion where traditional overwriting cannot, meeting GDPR, HIPAA, and PCI-DSS requirements. Even the cloud provider with full hardware access cannot decrypt data after the master key is destroyed.
 
 ---
 
@@ -840,36 +749,7 @@ The screenshot displays the output of the verification commands showing: (1) the
 
 #### Notes
 
-The integrity verification and tamper-evidence demonstration successfully showed that data protection requires more than just encryption—integrity controls are equally important for detecting unauthorized modifications and providing audit trails. Several key concepts were illustrated:
-
-**Hash Functions for Integrity:**
-- SHA-256 reliably detects any modification to files, regardless of size
-- Even a single-bit change produces a completely different hash (avalanche effect)
-- Hashes can be stored separately from data to enable later verification
-- Comparing stored hash with computed hash reveals tampering or corruption
-
-**Hash Chains for Tamper-Evident Logs:**
-- Each entry's hash includes the previous entry's hash, creating a chain
-- Modifying any entry requires recomputing all subsequent hashes
-- Comparing stored hashes with recomputed hashes detects tampering
-- This is the fundamental principle behind blockchain technology and certificate transparency logs
-- If an attacker changed "login ok" to "login failed", the hash for that entry would change, which would change the hash for "file read", which would change the hash for "export data", making tampering obvious
-
-**Digital Signatures Combine Multiple Properties:**
-- Authentication: Proves the signer's identity (only private key holder can sign)
-- Integrity: Detects any modification (hash is part of the signature)
-- Non-repudiation: Signer cannot later deny creating the signature
-- The "Verified OK" message confirms all three properties are satisfied
-
-**Production Applications:**
-- **Audit Logs:** Cloud systems should use hash chains or cryptographic append-only logs (AWS CloudTrail Log Validation, Azure Monitor Logs) to ensure audit trails cannot be modified after creation
-- **Software Distribution:** Package managers (apt, yum, npm) provide SHA-256 hashes for downloaded packages to verify integrity and detect man-in-the-middle attacks or compromised mirrors
-- **Blockchain:** Cryptocurrencies and distributed ledgers use hash chains at their core to create tamper-evident transaction history
-- **Certificate Transparency:** Browser vendors use hash chains to create public logs of TLS certificates, detecting misissued or fraudulent certificates
-- **File Integrity Monitoring:** Security tools (Tripwire, AIDE, OSSEC) maintain hash databases of system files to detect unauthorized modifications by malware or attackers
-
-**Authenticated Encryption:**
-The lab demonstrated integrity and confidentiality as separate controls, but production systems should use authenticated encryption modes like AES-GCM (Galois/Counter Mode) that provide both properties simultaneously—these modes encrypt data and compute an authentication tag in a single operation, detecting tampering attempts during decryption and preventing padding oracle attacks that can exploit non-authenticated CBC mode. Modern TLS 1.3 exclusively uses authenticated encryption for this reason.
+The integrity verification demonstrated that data protection requires both confidentiality (encryption) and integrity (hashing). SHA-256 reliably detects any file modification, hash chains create tamper-evident audit logs where modifying any entry breaks all subsequent hashes (the foundation of blockchain), and digital signatures combine authentication with integrity. Production applications use hash chains in audit logs, software distribution (package hashes), blockchain, and certificate transparency. While the lab showed integrity and encryption as separate controls, production systems should use authenticated encryption modes like AES-GCM that provide both simultaneously, detecting tampering during decryption and preventing attacks that exploit non-authenticated CBC mode.
 
 ---
 
@@ -893,507 +773,31 @@ The following security best practices were implemented and verified throughout t
 
 ### Q1. Compare symmetric and asymmetric encryption: speed, key distribution, and typical use.
 
-**Answer:**
-
-Symmetric and asymmetric encryption represent fundamentally different approaches to cryptographic protection, each with distinct characteristics and appropriate use cases:
-
-**Symmetric Encryption (AES-256 from Task 1):**
-
-**Speed:** Very fast, typically processing gigabytes per second on modern hardware—AES with hardware acceleration (AES-NI on Intel/AMD CPUs) can encrypt at memory bandwidth speeds. This makes symmetric encryption suitable for large volumes of data including files, databases, disk encryption, and network traffic.
-
-**Key Distribution:** Difficult and risky—both the sender and receiver must possess the exact same secret key, creating the key distribution problem. Securely sharing this key over networks or with multiple parties is challenging: sending keys in cleartext risks interception, encrypting keys requires already having a shared key (circular problem), and sharing keys with many users increases the risk that someone will compromise or leak the key. In multi-user systems, N users require N(N-1)/2 unique keys for pairwise communication, which doesn't scale.
-
-**Typical Use:** Protecting data at rest (file encryption, database encryption, disk/volume encryption), encrypting large data in transit after key exchange (TLS/SSL bulk encryption, VPN tunnels), and cloud storage encryption where envelope encryption provides the keys. In Task 1, we used AES-256-CBC to encrypt the patient record, demonstrating fast symmetric encryption suitable for file protection.
-
-**Asymmetric Encryption (RSA-2048 from Task 2):**
-
-**Speed:** Much slower, typically 100-1000x slower than symmetric encryption due to computationally expensive modular exponentiation operations. RSA-2048 encryption might process only a few kilobytes per second, making it impractical for large data volumes. This performance limitation is why RSA is rarely used to encrypt bulk data directly.
-
-**Key Distribution:** Easy and scalable—the public key can be freely distributed to anyone without compromising security (posted on websites, sent via email, included in certificates), while only the private key must be kept secret by its owner. This solves the key distribution problem because no pre-shared secrets are required: anyone can encrypt messages for the public key holder, and N users require only N key pairs for universal communication capability.
-
-**Typical Use:** Encrypting small secrets like passwords or session keys (hybrid encryption), digital signatures for authentication and integrity, TLS/SSL key exchange during handshake, SSH public key authentication, email encryption (S/MIME, PGP), code signing, and blockchain transactions. In Task 2.2, we used RSA to encrypt the patient record, but practical systems would use RSA only to encrypt an AES key, then use that AES key for bulk encryption—exactly the pattern envelope encryption implements in Task 5.
-
-**Hybrid Approach (Best of Both Worlds):**
-
-Modern systems combine both: use asymmetric encryption (RSA, ECDH) to securely exchange a symmetric session key, then use symmetric encryption (AES) for bulk data protection. This is exactly how TLS works (Task 3) and how envelope encryption works (Task 5)—asymmetric cryptography solves the key distribution problem, and symmetric cryptography provides the performance needed for real-world data volumes.
-
-**Summary Table:**
-
-| Property | Symmetric (AES) | Asymmetric (RSA) |
-|----------|----------------|------------------|
-| **Speed** | Very fast (GB/s) | Slow (KB/s) |
-| **Keys** | One shared secret | Public/private pair |
-| **Key Distribution** | Difficult, risky | Easy, scalable |
-| **Data Size** | Unlimited | Limited (~256 bytes for RSA-2048) |
-| **Use Case** | Bulk data encryption | Key exchange, signatures |
-| **Example** | Task 1 (file encryption) | Task 2 (key encryption) |
+Symmetric encryption uses one shared key for both encryption and decryption, making it fast but creating a key-distribution problem — the key must reach every party safely. Asymmetric encryption uses a public/private key pair, is slower, but solves distribution since the public key can be shared openly. Symmetric is typically used for encrypting large amounts of data; asymmetric is used for key exchange, digital signatures, and authentication.
 
 ---
 
 ### Q2. Why is key management described as the weakest link, not the algorithm?
 
-**Answer:**
-
-Modern cryptographic algorithms like AES-256 and RSA-2048 are mathematically strong and have been extensively analyzed by cryptographers worldwide—breaking these algorithms through brute force or cryptanalysis is considered computationally infeasible with current technology. However, most real-world encryption failures occur not because the algorithms are weak, but because the keys that unlock those algorithms are poorly managed. As the security maxim states: "Encryption is only as strong as its key management."
-
-**Why Key Management Is the Weakest Link:**
-
-**1. Keys Stored Insecurely:**
-- Hardcoding encryption keys directly in source code (visible in version control, decompiled binaries, or code repositories)
-- Storing keys in plaintext configuration files (config.ini, .env files) without proper file permissions
-- Including keys in database records or log files where they can be exfiltrated
-- In our lab, if we had left datakey.bin on disk after Task 5.3 instead of deleting it, all envelope encryption security would be defeated
-
-**2. Keys Transmitted Insecurely:**
-- Sending keys over unencrypted network connections where they can be intercepted
-- Including keys in email, instant messages, or collaboration tools
-- Storing keys in shared folders or cloud storage with inadequate access control
-- The key distribution problem from Q1 illustrates why symmetric key sharing is risky
-
-**3. Inadequate Access Control:**
-- Allowing too many users or applications access to encryption keys (violating least privilege)
-- Not revoking access when employees leave or change roles
-- Shared keys across multiple applications or tenants (blast radius problem from Task 6)
-- Without proper IAM policies on KMS keys (Task 4-6), unauthorized users could decrypt sensitive data
-
-**4. No Key Rotation:**
-- Using the same encryption key for years or decades increases cryptanalysis exposure
-- If a key is compromised but never rotated, all historical and future data remains at risk
-- Compliance standards (PCI-DSS, HIPAA) typically require periodic key rotation
-
-**5. Improper Key Deletion:**
-- Not securely destroying keys when they're no longer needed
-- Leaving plaintext keys in memory, swap files, crash dumps, or backups
-- In Task 5.3, we explicitly destroyed plaintext data keys to prevent this exposure
-
-**6. Weak Key Generation:**
-- Using predictable passwords or weak random number generators instead of cryptographically secure random sources
-- Deriving encryption keys from guessable inputs without proper key derivation functions
-- Task 1 used PBKDF2 specifically to strengthen password-based keys against brute force
-
-**Real-World Examples of Key Management Failures:**
-
-- **Code Signing Key Theft:** Attackers steal code-signing private keys and sign malware that appears legitimate
-- **Cloud Configuration Errors:** S3 buckets with encryption keys in publicly accessible files
-- **Insider Threats:** Employees with excessive key access exfiltrate customer data
-- **Lost Backup Tapes:** Physical media with plaintext encryption keys lost in transit
-- **Certificate Private Keys:** TLS private keys accidentally included in Docker images or git repositories
-
-**How KMS Solves Key Management Problems (Session B):**
-
-The envelope encryption pattern (Tasks 4-6) addresses all these weaknesses:
-- **Centralized Storage:** Master keys stored in FIPS 140-2 Level 2/3 HSMs, never exposed to applications
-- **Access Control:** IAM policies enforce who can use keys for which operations
-- **Audit Logging:** Every key operation is logged for security monitoring and compliance
-- **Key Lifecycle:** Automated rotation, graceful key disablement, safe deletion with waiting periods
-- **Separation of Duties:** Key administrators can't access encrypted data, data administrators can't access keys
-
-**The Critical Insight:**
-
-Even perfect AES-256 encryption is worthless if the key is stored next to the encrypted data in a file named "encryption_key.txt". Attackers don't break encryption algorithms mathematically—they steal keys through poor management practices, social engineering, or exploiting misconfigurations. This is why modern cloud security focuses heavily on key management services, hardware security modules, automated key rotation, comprehensive audit logging, and least-privilege access control rather than debating whether to use AES-256 vs AES-128.
+Modern algorithms like AES and RSA are extremely difficult to break mathematically when implemented correctly. The real risk lies in how keys are generated, stored, shared, or rotated — a stolen or leaked key exposes the data regardless of how strong the algorithm is. This is why key management, not the algorithm, is considered the weakest link.
 
 ---
 
 ### Q3. Explain envelope encryption and why only the master key needs hardware-grade protection.
 
-**Answer:**
-
-Envelope encryption is a cryptographic architecture pattern that solves the scalability, performance, and key management challenges of encrypting large volumes of data in cloud environments. The term "envelope" refers to wrapping one key inside another, like placing a letter (data encryption key) inside an envelope (master key encryption). This two-tier key hierarchy is the industry-standard approach used by AWS S3, Azure Storage, Google Cloud Storage, database encryption systems, and most cloud-native applications.
-
-**How Envelope Encryption Works (Demonstrated in Task 5):**
-
-**Step 1: Generate Data Encryption Key (DEK)**
-- Application calls KMS GenerateDataKey API specifying the master key ID
-- KMS generates a random AES-256 data encryption key using a cryptographically secure random number generator
-- KMS returns TWO versions of the same key:
-  - **Plaintext DEK:** For immediate use in encryption operations
-  - **Encrypted DEK:** Wrapped (encrypted) under the customer's master key
-- In Task 5.1, we received both versions from LocalStack KMS
-
-**Step 2: Encrypt Data Locally**
-- Application uses the plaintext DEK to encrypt the actual data (patient record) locally with AES
-- This encryption happens on the application server or user's device—the sensitive data never goes to KMS
-- Fast symmetric encryption (GB/s) suitable for large files, database records, or disk volumes
-- In Task 5.2, we used OpenSSL with the plaintext data key to encrypt record.txt
-
-**Step 3: Store Encrypted Data + Wrapped Key**
-- Application stores the encrypted data (record.env.enc) in cloud storage, database, or backup system
-- Application stores the encrypted DEK (datakey.enc) alongside the encrypted data as metadata
-- The encrypted DEK is safe to store anywhere—even publicly—because it can only be decrypted by KMS with proper authorization
-
-**Step 4: Destroy Plaintext Key**
-- Application securely destroys the plaintext DEK from memory and disk
-- Only the encrypted DEK remains, which is useless without KMS access
-- In Task 5.3, we explicitly deleted datakey.bin and datakey.b64 to prevent key exposure
-
-**Decryption Process (Reverse Workflow):**
-
-1. Retrieve encrypted data (record.env.enc) and encrypted DEK (datakey.enc) from storage
-2. Call KMS Decrypt API to unwrap the encrypted DEK (requires IAM authorization)
-3. KMS returns the plaintext DEK in memory
-4. Use plaintext DEK to decrypt the data locally with AES
-5. Destroy plaintext DEK immediately after decryption
-6. Return decrypted data to application
-
-**Why Only the Master Key Needs Hardware Protection:**
-
-**Master Key (Protected in HSM):**
-- Stored permanently in Hardware Security Module (HSM) certified to FIPS 140-2 Level 2 or Level 3
-- Never exported or exposed outside the HSM—even KMS administrators cannot access key material
-- Physical tamper-resistant security: hardware destroys keys if tampering is detected
-- Small: typically just 256 bits (32 bytes) for AES-256 keys
-- Long-lived: may exist for months or years across millions of encryption operations
-- In Task 4, KEY_A was created in KMS HSM and never left the LocalStack service
-
-**Data Encryption Keys (Temporary, Software-Protected):**
-- Generated on-demand for each encryption operation or data object
-- Exist in plaintext only temporarily during encryption/decryption (seconds to minutes)
-- Stored long-term only in encrypted (wrapped) form protected by the master key
-- If a plaintext DEK is compromised, only that one data object is affected, not all data
-- Can be regenerated by re-encrypting data with a new DEK if compromise is suspected
-- Scalable: can have millions of DEKs (one per file/object) without requiring millions of HSMs
-
-**The Economic and Practical Justification:**
-
-**Cost:** Hardware Security Modules are expensive ($10,000-40,000 per device) and require specialized maintenance, physical security, and redundancy. It's economically impractical to use HSM protection for every piece of encrypted data in a system that might handle billions of objects.
-
-**Performance:** HSMs have limited throughput (hundreds to thousands of operations per second) compared to software encryption (gigabytes per second). Encrypting all data directly through HSMs would create bottlenecks that make cloud-scale applications impossible.
-
-**Scalability:** Each organization might have only a few dozen master keys (per tenant, per data classification, per region), but millions or billions of data objects. Envelope encryption means only the small set of master keys needs expensive HSM protection, while the large set of DEKs can be protected through software encryption under those master keys.
-
-**Security Model:** The master key is like a "key to the keys"—it doesn't protect data directly, it protects other keys. This separation means:
-- Master key compromises are rare because HSMs are highly secure
-- If a DEK is compromised, you can re-encrypt that specific data with a new DEK
-- If a master key is compromised (extremely rare), you must re-wrap all DEKs with a new master key, but this is a key-only operation that doesn't require re-encrypting the actual data
-
-**Analogy:**
-
-Think of a bank: the master key is like the vault's master combination that only the bank president knows and which is protected by physical security, guards, and alarms. Data encryption keys are like individual safety deposit box keys given to customers. You don't need vault-level security for every safety deposit box key because even if someone steals one, they can only access one box, and the bank can re-key that box. But if someone compromises the vault's master combination, they can access all boxes, so that must have the highest protection.
-
-**Summary:**
-
-Envelope encryption is practical and scalable because it recognizes that not all keys require equal protection. By using a two-tier key hierarchy—expensive HSM protection for a few master keys, and software protection for many data keys—cloud systems achieve both strong security and the performance needed to encrypt exabytes of data economically. This pattern is what makes cloud encryption practical at scale, and it's why Task 5's envelope encryption demonstration is the most important pattern to understand for real-world cloud security.
+Envelope encryption uses a data key to encrypt the actual data, and that data key is itself encrypted ("wrapped") by a master key. Only the master key needs hardware-grade protection because it never leaves the KMS and is the single point that can unwrap data keys. The plaintext data key is used briefly and then discarded, minimizing exposure.
 
 ---
 
 ### Q4. How does cryptographic erasure achieve provable deletion where overwriting cannot (in the cloud)?
 
-**Answer:**
-
-Cryptographic erasure (also called crypto-shredding) is a technique for making data permanently and provably unrecoverable by destroying the encryption keys rather than overwriting the data itself. In Task 6, we demonstrated this by scheduling tenant-A's KMS key for deletion, which made all envelope-encrypted data (record.env.enc) permanently unrecoverable even though the encrypted file still exists on disk. This approach has become the preferred method for secure data deletion in cloud environments because traditional overwriting methods face fundamental challenges in virtualized and distributed systems.
-
-**The Problem with Traditional Secure Deletion:**
-
-**1. Distributed Replication:**
-- Cloud storage systems automatically replicate data across multiple physical devices, data centers, and geographic regions for durability and availability
-- A single file might exist on dozens of physical storage devices across the world
-- You cannot track where all copies are located (storage virtualization is opaque to users)
-- Even if you overwrite one copy, replicas remain on other devices
-
-**2. Snapshots and Backups:**
-- Cloud systems take frequent snapshots for disaster recovery (hourly, daily)
-- Point-in-time backups preserve historical data states
-- Deleted or overwritten data may exist in snapshots taken before deletion
-- Backup retention policies might keep snapshots for months or years
-- You cannot identify and overwrite data in all historical snapshots
-
-**3. SSD and Flash Storage Challenges:**
-- Modern SSDs use internal wear-leveling that relocates data blocks to distribute write operations evenly across the device
-- When you "overwrite" a block, the SSD may write to a different physical location and mark the old location as available
-- The original data remains physically present on the SSD in an inaccessible location
-- Flash Translation Layer (FTL) mappings are opaque and controlled by the SSD firmware
-- Traditional multi-pass overwrite methods (DoD 5220.22-M) don't work on SSDs as they did on magnetic hard drives
-
-**4. No Physical Access:**
-- Cloud tenants don't have physical access to storage hardware
-- Cannot perform physical destruction (shredding, degaussing, incineration) of storage media
-- Cannot verify that overwriting actually occurred at the physical level
-- Must trust the cloud provider's deletion procedures
-
-**5. Copy-on-Write Filesystems:**
-- Modern filesystems (ZFS, Btrfs, APFS) and storage systems use copy-on-write
-- Modifications create new copies rather than overwriting data in place
-- Old versions remain until garbage collection, which is unpredictable
-- Overwrite commands may not actually overwrite anything physically
-
-**How Cryptographic Erasure Works:**
-
-**Setup (During Normal Operations):**
-1. Generate a unique encryption key per tenant, data classification, or even per object
-2. Encrypt all sensitive data with these keys (using envelope encryption from Task 5)
-3. Store encrypted data in cloud storage, databases, backups, and snapshots
-4. Protect encryption keys in a separate Key Management Service (KMS)
-5. Encrypted data and replicas spread across the infrastructure as normal
-
-**Deletion (When Required):**
-1. Simply delete the encryption key from KMS (Task 6)
-2. After the pending deletion window, KMS permanently destroys the key material in the HSM
-3. All data encrypted under that key becomes cryptographically unrecoverable
-4. Even if encrypted ciphertext is recovered from storage, backups, or snapshots, it's useless without the key
-
-**Why This Achieves Provable Deletion:**
-
-**Mathematically Secure:**
-- Without the encryption key, encrypted data encrypted with AES-256 is computationally infeasible to decrypt
-- Brute-force would require trying 2^256 possible keys (more operations than atoms in the observable universe)
-- No known practical attacks against properly implemented AES-256
-- The encrypted data becomes effectively random noise
-
-**Immediate Effect:**
-- Deletion is instantaneous—simply delete the key
-- No need to locate and overwrite multiple replicas across distributed storage
-- No need to wait for multi-pass overwrite operations that could take hours or days for large datasets
-
-**Auditable and Provable:**
-- KMS logs all key deletions with timestamps and identities
-- Audit trails provide proof of deletion for compliance purposes
-- Can demonstrate to regulators that data is unrecoverable even if ciphertext remains
-- Satisfies GDPR "right to be forgotten", HIPAA disposal requirements, PCI-DSS data retention policies
-
-**Handles Replicas and Backups:**
-- All replicas, snapshots, and backups contain only encrypted data
-- Deleting one key makes all copies unrecoverable simultaneously
-- Don't need to track or manage where copies exist
-- Works even for data in off-site tape backups or cold storage
-
-**Vendor-Independent:**
-- Don't need to trust cloud provider's deletion procedures
-- Can prove deletion mathematically rather than procedurally
-- Works across hybrid environments (on-premises + cloud)
-- Can be verified by third-party auditors
-
-**Real-World Applications:**
-
-**Per-Tenant Keys (Task 6):**
-- Each customer's data encrypted with their own unique KMS key
-- When customer leaves service or requests data deletion: delete their key
-- All their data across all systems instantly becomes unrecoverable
-- Other customers unaffected (key isolation)
-
-**Per-Object Keys:**
-- Each sensitive file, database record, or message encrypted with unique key
-- Selective deletion: delete specific objects without affecting others
-- Granular retention: keep some data for legal hold while deleting others
-
-**Time-Based Deletion:**
-- Encrypt data with keys that are automatically deleted after retention period
-- Ensures compliance with data retention policies
-- No need to remember to delete data manually
-
-**Compliance Examples:**
-
-**GDPR Right to Be Forgotten:**
-- User requests deletion of personal data
-- Delete their encryption key from KMS
-- All their data (in production, backups, logs, analytics) becomes unrecoverable
-- Audit log proves deletion occurred
-
-**HIPAA Protected Health Information (PHI):**
-- Patient data encrypted with per-patient keys
-- After retention period: delete keys
-- PHI becomes unrecoverable even if backups exist
-
-**PCI-DSS Cardholder Data:**
-- Payment card data encrypted with transaction-specific keys
-- After 90 days: delete keys
-- Old transaction data cannot be decrypted even if databases are breached
-
-**Demonstration from Task 6:**
-
-In our lab, after scheduling KEY_A for deletion:
-- The patient record (record.env.enc) still exists on disk
-- The wrapped data key (datakey.enc) still exists on disk
-- But attempting to decrypt fails with KMSInvalidStateException
-- After the 7-day pending window, the master key is permanently destroyed
-- At that point, no one—not even AWS with full hardware access—can decrypt record.env.enc
-- The encrypted file has become cryptographically worthless permanent noise
-
-**Contrast with Overwriting:**
-
-If we had tried to securely delete record.txt using traditional methods:
-1. We'd need to locate all copies (original, backups, snapshots, replicas)
-2. We'd need to perform multi-pass overwriting (7-35 passes per DoD standards)
-3. We couldn't verify it worked on SSDs due to wear-leveling
-4. We couldn't access copies in cloud provider's infrastructure
-5. We couldn't prove deletion occurred for compliance auditors
-
-**Limitations and Considerations:**
-
-Cryptographic erasure is not a complete replacement for all deletion scenarios:
-- **Still need key management:** Must protect the KMS master keys in HSMs
-- **Key backup and recovery:** Must have procedures to prevent accidental key deletion
-- **Performance:** Must design systems to handle per-tenant or per-object key management at scale
-- **Not for unencrypted data:** Only works if data was encrypted in the first place
-- **Regulatory acceptance:** Must confirm that regulations accept cryptographic erasure (most do, but verify)
-
-**Conclusion:**
-
-Cryptographic erasure solves the fundamental problem that you cannot reliably overwrite data in modern cloud and distributed systems. By making security depend on key deletion rather than data deletion, it provides provable, immediate, auditable data destruction that works regardless of how many copies exist or where they're located. This is why Task 6's demonstration of scheduling key deletion and observing decrypt failures is so important—it shows that properly implemented cryptographic erasure truly makes data unrecoverable, making it the preferred approach for cloud data deletion.
+Cloud data often has multiple copies across backups, replicas, and distributed storage, making it impractical to overwrite every instance. Cryptographic erasure instead destroys or disables the encryption key. Without the key, all remaining encrypted copies become permanently unreadable, even though the ciphertext itself still physically exists.
 
 ---
 
-### Q5. How does a hash chain make a log tamper-evident (link to tamper-proof logs, Week 6)?
+### Q5. How does a hash chain make a log tamper-evident?
 
-**Answer:**
-
-A hash chain is a data structure that creates tamper-evident logs by cryptographically linking each log entry to all previous entries through cascading cryptographic hashes. Any attempt to modify historical entries breaks the chain, making tampering immediately detectable. This technique is the fundamental building block for blockchain technology, certificate transparency logs, audit trail systems, and secure logging platforms. In Task 7, we built a simple hash chain for three audit events, demonstrating how each entry's hash depends on all previous entries.
-
-**How Hash Chains Work (Task 7 Implementation):**
-
-**Structure:**
-```
-Entry 1: login ok        | Hash1 = SHA256("0" + "login ok")
-Entry 2: file read       | Hash2 = SHA256(Hash1 + "file read")
-Entry 3: export data     | Hash3 = SHA256(Hash2 + "export data")
-```
-
-**Step-by-Step Construction:**
-
-1. **Initialize:** Start with a genesis hash (often 0 or hash of empty string)
-2. **First Entry:** Hash = SHA256(previous_hash + entry_1_data)
-   - In Task 7: `PREV=$(echo -n "0login ok" | sha256sum)`
-   - Produces: `login ok | 93a42b4...`
-3. **Second Entry:** Hash = SHA256(Hash1 + entry_2_data)
-   - In Task 7: `PREV=$(echo -n "${PREV}file read" | sha256sum)`
-   - Produces: `file read | 7d8e3c1...`
-4. **Third Entry:** Hash = SHA256(Hash2 + entry_3_data)
-   - In Task 7: `PREV=$(echo -n "${PREV}export data" | sha256sum)`
-   - Produces: `export data | 2f6a9b8...`
-
-Each entry includes:
-- The actual log data (timestamp, user, action, etc.)
-- The hash of the previous entry
-- Its own hash computed from previous hash + current data
-
-**Why This Makes Tampering Detectable:**
-
-**Avalanche Effect:**
-- SHA-256 has the "avalanche effect": changing even one bit in the input produces a completely different 256-bit output
-- No way to predict what changes will produce similar-looking hashes
-- No way to find two different inputs that produce the same hash (collision resistance)
-
-**Forward Propagation:**
-- If an attacker modifies Entry 1 from "login ok" to "login failed":
-  - Entry 1's hash changes completely
-  - But Entry 2 includes Entry 1's hash in its computation
-  - So Entry 2's stored hash no longer matches recomputation
-  - Entry 3 includes Entry 2's hash, so it also breaks
-  - The tampering is detected when validating the chain
-
-**Example Attack Scenario:**
-```
-Original Chain:
-Entry 1: login ok        | Hash1 = abc123...
-Entry 2: file read       | Hash2 = def456... (includes abc123)
-Entry 3: export data     | Hash3 = ghi789... (includes def456)
-
-Attacker modifies Entry 1:
-Entry 1: login FAILED    | Hash1 = xyz999... (different!)
-Entry 2: file read       | Hash2 = def456... (stored hash)
-```
-
-**Validation Process:**
-1. Recompute Hash1 from modified Entry 1 → get xyz999
-2. Recompute Hash2 = SHA256(xyz999 + "file read") → get NEW_VALUE
-3. Compare recomputed NEW_VALUE with stored def456
-4. **Mismatch detected!** Log has been tampered with
-
-**Attacker's Problem:**
-
-To successfully tamper without detection, the attacker would need to:
-1. Modify Entry 1
-2. Recompute Hash1 with the new data
-3. Modify Entry 2 to include the new Hash1
-4. Recompute Hash2 with new data
-5. Modify Entry 3 to include the new Hash2
-6. Recompute Hash3... and so on for all subsequent entries
-
-**Defense Against This:**
-- **Store hash chain head externally:** Publish the most recent hash (Hash3 in our example) to an external system like blockchain, certificate transparency log, newspaper publication, or trusted timestamping service
-- **Real-time monitoring:** Alert immediately when new entries are added, making retroactive chain modification obvious
-- **Signed entries:** Combine hash chains with digital signatures (Task 2.3) so entries are signed by append-only keys that are revoked after writing
-- **Distributed consensus:** Use blockchain-style consensus where multiple parties must agree on the chain state (Bitcoin, Ethereum)
-
-**Real-World Applications:**
-
-**1. Blockchain (Bitcoin, Ethereum):**
-- Each block contains: transactions + hash of previous block + nonce
-- Block N+1 includes hash of Block N
-- Modifying any historical transaction requires recomputing all subsequent blocks
-- Proof-of-work makes recomputation economically infeasible
-- Our Task 7 hash chain is a simplified blockchain without proof-of-work
-
-**2. Certificate Transparency Logs:**
-- Google Chrome requires TLS certificates to be logged in public CT logs
-- Each log entry (certificate) is added to a hash chain (Merkle tree)
-- Browsers verify that certificates appear in the chain
-- Detects misissued or fraudulent certificates
-- Cannot remove certificates from history without breaking the chain
-
-**3. AWS CloudTrail Log File Integrity:**
-- AWS CloudTrail logs all API operations for audit purposes
-- Uses hash chains to validate that log files haven't been modified
-- Each log file includes hash of previous log file
-- Digest files provide cryptographic proof of log integrity
-- Meets compliance requirements for tamper-proof audit trails
-
-**4. Git Version Control:**
-- Each commit includes SHA-1 hash of: parent commit + changes + metadata
-- Commit history forms a hash chain (directed acyclic graph)
-- Modifying any historical commit changes its hash and breaks all descendant commits
-- `git log --verify` can detect tampering
-
-**5. Medical Records and Legal Documents:**
-- Electronic health records with hash chains prevent backdating or modification of diagnoses
-- Legal contracts with timestamped hash chains prove when documents were created
-- Satisfies regulatory requirements for audit trails (HIPAA, SOX, FDA 21 CFR Part 11)
-
-**6. IoT and Sensor Data:**
-- Industrial sensors (manufacturing, energy) use hash chains to create tamper-evident data streams
-- Prevents manipulation of sensor readings that could hide equipment failures or safety violations
-- Each reading includes hash of previous reading, creating an integrity-protected time series
-
-**Enhancement: Merkle Trees (Week 6 Connection):**
-
-Hash chains can be extended to Merkle trees for more efficient verification:
-- Binary tree where leaf nodes are hashes of data entries
-- Internal nodes are hashes of their two child nodes
-- Root hash represents the entire tree state
-- Can verify individual entry exists without processing entire chain
-- Used in Bitcoin, Git, Certificate Transparency, distributed databases
-
-**Tamper-Proof vs Tamper-Evident:**
-
-Important distinction:
-- **Tamper-proof:** Prevents tampering through access control, encryption, physical security (ideal but often impractical)
-- **Tamper-evident:** Doesn't prevent tampering but makes it detectable through cryptographic techniques (practical and deployable)
-
-Hash chains are tamper-evident, not tamper-proof:
-- An attacker with write access can still modify logs
-- But the cryptographic chain breaks, making tampering obvious
-- Combined with monitoring and backups, this provides strong security
-
-**Production Implementation Considerations:**
-
-1. **Performance:** Computing SHA-256 for every log entry adds overhead—batch entries or use async processing
-2. **Storage:** Each entry stores hash of previous entry (32 bytes for SHA-256)—minimal overhead
-3. **Validation:** Periodically verify chain integrity by recomputing hashes
-4. **Anchoring:** Publish hash chain head to external system for additional security
-5. **Key Management:** If combining with signatures, use HSM-protected signing keys
-6. **Monitoring:** Alert on chain breaks immediately—indicates security incident
-
-**Connection to Week 6 Material:**
-
-The course likely covers:
-- Advanced hash chain structures (Merkle trees, skip lists)
-- Blockchain consensus mechanisms (proof-of-work, proof-of-stake)
-- Distributed ledger technology applications
-- Integration with CloudTrail, CloudWatch, or similar audit services
-- Compliance frameworks requiring tamper-proof logs (SOC 2, ISO 27001, FedRAMP)
-
-**Summary:**
-
-Hash chains make logs tamper-evident by cryptographically linking each entry to all previous entries through cascading SHA-256 hashes. Modifying any historical entry breaks the chain forward, making tampering immediately detectable during validation. While not tamper-proof (attackers can still modify logs), hash chains make security incidents obvious and provide cryptographic proof of log integrity for audit and compliance purposes. This technique underpins blockchain, certificate transparency, version control, and secure audit logging—all critical components of modern cloud security architecture.
+In a hash chain, each log entry's hash is calculated using the previous entry's hash plus its own content. If an earlier entry is altered, its hash changes, which cascades and invalidates every hash that follows it. This makes any tampering with past entries immediately detectable.
 
 ---
 
@@ -1426,39 +830,6 @@ Traditional secure deletion methods (multi-pass overwriting, physical destructio
 **6. Defense-in-Depth Requires Multiple Security Dimensions:**
 
 The lab demonstrated that comprehensive data protection requires layered controls across multiple dimensions rather than relying on any single security mechanism. Confidentiality (encryption prevents unauthorized reading), integrity (hashing and signatures detect unauthorized modifications), authentication (digital signatures prove origin), secure communication (TLS protects data in transit), key lifecycle management (KMS controls who can use keys when), and audit logging (tracking all key operations for security monitoring) must all work together. Missing any layer creates vulnerabilities: encryption without integrity allows tampering, TLS without certificate validation enables man-in-the-middle attacks, strong encryption with weak key management provides no real security.
-
-### Skills Acquired:
-
-Through this two-session lab, practical hands-on skills were developed in:
-
-**Cryptographic Operations:**
-- Using OpenSSL command-line tools for AES encryption/decryption, RSA key generation, public-key encryption, digital signature creation and verification, and SHA-256 hash calculation
-- Understanding cipher modes (CBC), key derivation functions (PBKDF2), and the importance of salt and initialization vectors
-- Recognizing when to use symmetric vs asymmetric encryption based on performance, key management, and data size requirements
-
-**Certificate Management:**
-- Generating self-signed X.509 certificates for TLS testing
-- Understanding certificate fields (Subject, CN, validity period) and extensions (SAN for production)
-- Configuring web servers (Nginx) for HTTPS with certificate and private key
-- Recognizing the difference between self-signed certificates (development) and CA-signed certificates (production)
-
-**Cloud Key Management:**
-- Using AWS CLI to interact with KMS APIs (CreateKey, Encrypt, GenerateDataKey, Decrypt, ScheduleKeyDeletion)
-- Implementing envelope encryption workflow from key generation through data encryption to key cleanup
-- Managing key lifecycle states (Enabled, Disabled, PendingDeletion) and understanding their security implications
-- Designing per-tenant key architectures for multi-tenant isolation
-
-**Security Architecture Patterns:**
-- Envelope encryption as the standard pattern for cloud-scale data protection
-- Hash chains for tamper-evident audit logging
-- Cryptographic erasure for secure cloud data deletion
-- Hybrid cryptography combining symmetric and asymmetric operations
-
-**Operational Security Practices:**
-- Proper handling of plaintext keys (temporary use, immediate destruction)
-- Secure configuration management (never hardcoding keys, using environment variables or KMS)
-- Verification and testing methodology (comparing before/after states, validating signatures, testing key deletion enforcement)
-- Documentation and audit trail creation (capturing commands and outputs for compliance evidence)
 
 ### Real-World Applications:
 
@@ -1496,45 +867,6 @@ The techniques and patterns learned in this lab are directly applicable to:
 - Digital signatures for transaction authentication
 - Cryptographic proof-of-work and proof-of-stake consensus mechanisms
 - Smart contract security and key management for decentralized applications
-
-### Production Considerations:
-
-While this lab used local development environments (LocalStack, self-signed certificates), production implementations require additional considerations:
-
-**Key Management:**
-- Use actual cloud KMS services (AWS KMS, Azure Key Vault, Google Cloud KMS) with FIPS 140-2 Level 2/3 certified HSMs for master key protection
-- Implement automated key rotation schedules (annually or more frequently for high-security data)
-- Design key hierarchies for different data classifications (public, internal, confidential, restricted)
-- Establish key backup and recovery procedures with multi-party approval for disaster recovery
-- Monitor KMS audit logs in real-time for unauthorized key access attempts or suspicious patterns
-
-**Certificate Management:**
-- Use certificates from trusted Certificate Authorities (Let's Encrypt for automation, commercial CAs for extended validation)
-- Implement certificate renewal automation to prevent expiration incidents
-- Use Certificate Transparency monitoring to detect misissued certificates
-- Configure proper TLS settings (TLS 1.2 minimum, TLS 1.3 preferred, strong cipher suites only)
-- Implement HTTP Strict Transport Security (HSTS) and certificate pinning where appropriate
-
-**Access Control:**
-- Implement least-privilege IAM policies for KMS key usage (separate roles for key administrators vs key users)
-- Use service control policies (SCPs) and permission boundaries to prevent privilege escalation
-- Require multi-factor authentication for sensitive key operations
-- Implement separation of duties (different roles for key creation, usage, and deletion)
-- Regular access reviews and automated revocation for terminated employees
-
-**Monitoring and Alerting:**
-- Stream KMS CloudTrail logs to SIEM systems for security monitoring
-- Alert on suspicious patterns (excessive decrypt failures, unusual key access times, access from unexpected IPs)
-- Monitor envelope encryption operations for performance degradation or failures
-- Track key usage metrics to identify over-privileged applications
-- Implement anomaly detection for unusual encryption/decryption volumes
-
-**Compliance and Audit:**
-- Maintain comprehensive documentation of encryption architectures and key management procedures
-- Generate periodic reports showing which keys protect which data classifications
-- Provide auditors with KMS access logs and hash chain integrity proofs
-- Implement data classification tagging and automated encryption enforcement
-- Demonstrate cryptographic erasure procedures for data deletion audits
 
 ### Future Learning:
 
@@ -1624,76 +956,6 @@ docker ps -a | grep -E 'tls|localstack'
 ```
 
 **Note:** The cleanup removes all encryption keys, certificates, encrypted files, and temporary data created during the lab. If you need to preserve any evidence for your report submission, make copies before executing cleanup commands. The `2>/dev/null` redirects suppress error messages for files or containers that don't exist, allowing the cleanup script to run safely even if some steps were not completed.
-
----
-
-## Expansion Ideas (Advanced Students)
-
-For students who want to deepen their understanding of encryption and key management, the following advanced topics extend the concepts covered in this lab:
-
-### 1. Hardware Security Module (HSM) Integration
-
-**Objective:** Use a software HSM (SoftHSM2) to store encryption keys and perform cryptographic operations with PKCS#11 interface.
-
-**Why it matters:** Production KMS systems use HSMs certified to FIPS 140-2 Level 2/3 for physical tamper resistance and key protection. Understanding HSM operations provides insight into how KMS actually protects master keys.
-
-**Implementation:** Install SoftHSM2, initialize a token with PIN, generate an RSA key pair inside the HSM, use OpenSSL with PKCS#11 engine to sign documents with the HSM-protected key, and demonstrate that the private key cannot be extracted from the HSM.
-
-### 2. Automated Key Rotation
-
-**Objective:** Implement automated key rotation that generates new master keys, re-wraps all data encryption keys under the new master key, and deprecates old master keys.
-
-**Why it matters:** Key rotation is a security best practice that limits cryptanalysis exposure and provides crypto-agility. Production systems must rotate keys without application downtime.
-
-**Implementation:** Create a rotation script that (1) creates a new KMS master key, (2) lists all wrapped DEKs encrypted under the old key, (3) calls KMS Decrypt with old key and Encrypt with new key to re-wrap each DEK, (4) updates metadata to reference the new key, (5) schedules the old key for deletion after grace period.
-
-### 3. Client-Side Encryption with Encryption SDK
-
-**Objective:** Use AWS Encryption SDK or similar library to implement envelope encryption in application code with automatic key caching and rotation.
-
-**Why it matters:** Real applications don't call raw KMS APIs—they use encryption libraries that handle envelope encryption, caching, and key rotation transparently.
-
-**Implementation:** Install AWS Encryption SDK (Python, Java, or Node.js), configure with KMS master key provider, encrypt multiple files with automatic DEK caching (avoiding KMS calls for every file), implement data key caching with TTL and usage limits, and demonstrate decryption with automatic KMS unwrapping.
-
-### 4. Mutual TLS (mTLS) Authentication
-
-**Objective:** Configure both server and client to present certificates, establishing bidirectional authentication where both parties verify each other's identity.
-
-**Why it matters:** mTLS is used in zero-trust architectures, microservices authentication (service mesh), API security, and IoT device authentication.
-
-**Implementation:** Generate a Certificate Authority (CA) certificate, sign both server and client certificates with the CA, configure Nginx to require client certificates, use curl with client certificate to connect, and demonstrate that connections without valid client certificates are rejected.
-
-### 5. Authenticated Encryption with AES-GCM
-
-**Objective:** Replace AES-CBC (which provides only confidentiality) with AES-GCM mode that provides both confidentiality and integrity/authentication in a single operation.
-
-**Why it matters:** Modern applications should use authenticated encryption to prevent tampering attacks, padding oracle attacks, and other vulnerabilities that affect non-authenticated modes.
-
-**Implementation:** Encrypt data with `openssl enc -aes-256-gcm`, demonstrate that any modification to ciphertext causes decryption to fail with authentication tag mismatch, compare performance with AES-CBC + HMAC separate operations, and understand why TLS 1.3 uses only authenticated encryption modes.
-
-### 6. HashiCorp Vault Integration
-
-**Objective:** Deploy Vault in a Docker container and use its transit secrets engine for envelope encryption without managing KMS keys directly.
-
-**Why it matters:** Vault is a popular open-source alternative to cloud KMS, used in hybrid and multi-cloud environments for centralized secrets and key management.
-
-**Implementation:** Start Vault dev server, enable transit engine, create an encryption key, use Vault API to encrypt/decrypt data, implement envelope encryption workflow using Vault instead of AWS KMS, and configure access policies for multi-tenant isolation.
-
-### 7. Certificate Transparency Log Verification
-
-**Objective:** Submit a TLS certificate to a public Certificate Transparency log and verify the Signed Certificate Timestamp (SCT).
-
-**Why it matters:** Certificate Transparency prevents misissued certificates by requiring public logging, and browsers now require SCTs for certificate acceptance.
-
-**Implementation:** Use ct-submit tool to submit a certificate to a CT log, retrieve the SCT proving the certificate was logged, use verification tools to confirm the SCT signature is valid, and understand how browsers use CT logs to detect fraudulent certificates.
-
-### 8. Shamir's Secret Sharing for Key Backup
-
-**Objective:** Split a KMS master key backup into multiple shares where K-of-N shares are required to reconstruct the key.
-
-**Why it matters:** High-security environments use secret sharing to prevent single points of failure and require multi-party approval for key recovery.
-
-**Implementation:** Use ssss (Shamir's Secret Sharing Scheme) tool to split a master key into 5 shares requiring any 3 to reconstruct, distribute shares to different administrators, demonstrate reconstruction with 3 shares, and show that 2 shares reveal nothing about the key.
 
 ---
 
