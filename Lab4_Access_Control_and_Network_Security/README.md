@@ -1,354 +1,391 @@
-# IKB42603 Cloud Computing Security Essentials
-## Lab 4: Access Control & Network Security
-**Student Name:** Surya  
-**Lab Title:** Authentication vs Authorization, Network Segmentation and Host Hardening  
-**Date:** August 30, 2026  
-**Platform:** Docker & Kubernetes
+# Lab 4: Access Control & Network Security Report
+
+## Student Information
+
+- **Name:** Surya Giri A/L Shanker
+- **Student ID:** 52215124335
+- **Course:** IKB42603 Cloud Computing Security Essentials
+- **Lab Task:** Lab 4 - Access Control & Network Security
+- **Lecturer Name:** Prof. Dr. Shahrulniza Musa
 
 ---
 
-## Table of Contents
-1. [Lab Overview](#lab-overview)
-2. [Lab Learning Outcomes](#lab-learning-outcomes)
-3. [Technical Prerequisites](#technical-prerequisites)
-4. [Session A: Authentication & Authorization](#session-a-authentication--authorization)
-   - [Task 1: Authentication - Password-Protected Service](#task-1-authentication---password-protected-service)
-   - [Task 2: Add a Second Factor (MFA/TOTP)](#task-2-add-a-second-factor-mfatotp)
-   - [Task 3: Authorization - RBAC Roles](#task-3-authorization---rbac-roles)
-5. [Session B: Network Security & Hardening](#session-b-network-security--hardening)
-   - [Task 4: Network Segmentation (Three-Tier)](#task-4-network-segmentation-three-tier)
-   - [Task 5: Firewall Rules (Default-Deny)](#task-5-firewall-rules-default-deny)
-   - [Task 6: Container/Host Hardening](#task-6-containerhost-hardening)
-6. [Verification Commands](#verification-commands)
-7. [Short-Answer Questions](#short-answer-questions)
-8. [Security Best-Practices Checklist](#security-best-practices-checklist)
-9. [Cleanup & Teardown](#cleanup--teardown)
-10. [Conclusion](#conclusion)
+## Overview
+
+This report documents the implementation and verification of access control and network security controls for cloud computing environments, demonstrating how authentication, authorization, network segmentation, firewall rules, and container hardening work together as a defense-in-depth strategy. The lab was conducted in two sessions over two weeks. Session A focused on controlling WHO gets in by implementing HTTP Basic authentication for password-protected services, adding multi-factor authentication (MFA) using time-based one-time passwords (TOTP) for second-factor verification, and configuring Kubernetes Role-Based Access Control (RBAC) to enforce authorization policies that determine what authenticated users are allowed to do. Session B focused on controlling WHAT users can reach and reducing WHAT attackers could exploit by implementing three-tier network segmentation to isolate sensitive services, configuring default-deny firewall rules that permit only necessary traffic, and hardening container deployments with non-root users, read-only filesystems, dropped capabilities, and vulnerability scanning. The purpose of this comprehensive lab was to develop practical understanding that identity is the security perimeter—every control ultimately asks "are you who you claim to be?" and "are you allowed to do this?"—and that defense-in-depth requires multiple layers of security controls across access control, network security, and host hardening. Both sessions were executed using command-line tools (Docker for containers and authentication services, kubectl and kind for Kubernetes RBAC, iptables for firewall rules, Trivy for vulnerability scanning) in a Windows PowerShell environment, and each task was systematically documented with terminal commands and screenshots as evidence of successful implementation.
+
+**Security Principle:** *Identity is the perimeter.* Almost every control in this lab ultimately asks the same two questions: are you who you claim, and are you allowed to do this?
 
 ---
 
-## Lab Overview
+## Objectives
 
-This lab focuses on implementing critical security controls in cloud environments:
-- **Session A (Week 7):** Controls **WHO** gets in (Authentication & Authorization)
-- **Session B (Week 8):** Controls **WHAT** they can reach and reduces **WHAT** an intruder could exploit (Network Security & Hardening)
+The objectives of this lab across both sessions are:
 
-**Security Principle:** *Identity is the perimeter.* Every control asks: "Are you who you claim?" and "Are you allowed to do this?"
+**Session A Objectives (Week 7 - Authentication & Authorization):**
+
+- Implement HTTP Basic authentication to protect a web service with username and password credentials.
+- Demonstrate that unauthenticated requests are rejected with HTTP 401 Unauthorized responses.
+- Verify that authenticated requests with valid credentials receive HTTP 200 OK responses.
+- Generate a time-based one-time password (TOTP) shared secret for multi-factor authentication.
+- Implement MFA validation by comparing user-entered codes with expected TOTP values.
+- Understand that MFA combines something you know (password) with something you have (TOTP device).
+- Create a Kubernetes cluster with namespaces and service accounts for RBAC testing.
+- Configure role-based access control (RBAC) with limited permissions (read-only pods).
+- Test authorization enforcement using kubectl auth can-i commands to verify allowed and denied operations.
+- Distinguish between authentication (proving identity) and authorization (enforcing permissions).
+
+**Session B Objectives (Week 8 - Network Security & Hardening):**
+
+- Create isolated Docker networks to implement three-tier architecture segmentation.
+- Deploy frontend, backend, and database tiers on separate networks with controlled connectivity.
+- Demonstrate that network segmentation prevents direct communication between isolated tiers.
+- Verify that segmentation contains lateral movement by blocking web-to-database connections.
+- Configure host-level firewall rules using iptables with default-deny policy.
+- Implement explicit allow rules for required ports (HTTPS) while blocking all other traffic.
+- Understand the security-group model where nothing is allowed unless explicitly permitted.
+- Deploy hardened containers with non-root users, read-only filesystems, and dropped capabilities.
+- Implement security options including no-new-privileges and tmpfs for temporary storage.
+- Scan container images for vulnerabilities using Trivy to identify HIGH and CRITICAL severity issues.
+- Verify hardening measures by inspecting container configuration and security settings.
+
+**Common Objectives:**
+
+- Document all procedures clearly using terminal commands and screenshots as evidence of implementation.
+- Understand that identity is the security perimeter and every control validates identity and permissions.
+- Recognize that defense-in-depth requires multiple layers of security controls.
+- Apply the principle of least privilege across access control, network segmentation, and container security.
+- Understand how access control mechanisms integrate with network security and host hardening.
 
 ---
 
-## Lab Learning Outcomes
+## Learning Outcomes
 
-At the end of this lab, I was able to:
-1. ✅ Distinguish and implement **authentication** (who you are) and **authorization** (what you may do)
-2. ✅ Add a second factor with a **TOTP (MFA)** code and verify it
-3. ✅ Configure **network access control and segmentation** so services reach only what they must
-4. ✅ **Harden a container image**: non-root, minimal, dropped capabilities, read-only filesystem
-5. ✅ Scan an image for vulnerabilities and apply the principle of **least privilege** across compute, network and storage
+By completing this lab across both sessions, the student should be able to:
+
+**Session A Outcomes (Authentication & Authorization):**
+
+- Explain the difference between authentication (verifying identity) and authorization (enforcing permissions).
+- Implement HTTP Basic authentication using password files and web server configuration.
+- Use oathtool or authenticator apps to generate and validate time-based one-time passwords (TOTP).
+- Understand why MFA is considered "the cheapest big security win" by defeating credential-based attacks.
+- Configure Kubernetes RBAC roles and role bindings to enforce least-privilege access control.
+- Use kubectl auth can-i commands to test authorization policies and verify permission enforcement.
+- Recognize that authentication proves WHO you are while authorization determines WHAT you can do.
+- Understand that even authenticated users should have limited permissions based on their role.
+
+**Session B Outcomes (Network Security & Hardening):**
+
+- Design and implement three-tier network architectures with isolated network segments.
+- Understand how network segmentation limits blast radius and contains lateral movement during breaches.
+- Configure default-deny firewall policies with explicit allow rules for required traffic.
+- Recognize the relationship between host firewalls and cloud security groups.
+- Implement container hardening measures including non-root users, read-only filesystems, and capability drops.
+- Scan container images for vulnerabilities and interpret severity levels (HIGH, CRITICAL).
+- Explain how each hardening measure reduces specific attack surfaces and mitigates threats.
+- Apply defense-in-depth principles by layering multiple security controls.
+
+**Common Outcomes:**
+
+- Recognize that security controls work together to provide comprehensive protection.
+- Understand that compromising authentication doesn't automatically grant full system access if authorization is properly configured.
+- Apply the principle of least privilege across identity, network, and compute layers.
+- Document technical security procedures clearly using terminal commands and visual evidence.
+- Understand how access control and network security complement encryption and integrity controls from previous labs.
 
 ---
 
-## Technical Prerequisites
+## Environment and Prerequisites
 
-- ✅ Laptop with Docker installed
-- ✅ Terminal access
-- ✅ `kind` and `kubectl` installed
-- ✅ `oathtool` for TOTP (MFA)
-- ✅ Trivy container scanner
-- ✅ Internet connection for initial image downloads
+The lab was conducted on a Windows environment with PowerShell terminal and Docker installed. The following tools and conditions were required before starting the lab:
+
+**Session A Prerequisites (Authentication & Authorization):**
+
+- Docker installed and running to support containerized authentication services and web servers.
+- kubectl and kind installed for creating local Kubernetes clusters and configuring RBAC.
+- oathtool installed for generating and validating TOTP codes (or any authenticator app).
+- Basic understanding of authentication concepts including passwords, usernames, and session management.
+- Basic understanding of authorization concepts including roles, permissions, and access control policies.
+- Terminal or command-line interface with PowerShell access for executing Docker and kubectl commands.
+- Network connectivity for pulling Docker images (nginx, httpd) and Kubernetes node images.
+
+**Session B Prerequisites (Network Security & Hardening):**
+
+- Docker networking features available for creating custom bridge networks and network isolation.
+- iptables or equivalent firewall tools available in Docker containers for firewall rule configuration.
+- Trivy container scanner installed for vulnerability assessment of container images.
+- Understanding of network concepts including network isolation, subnets, and connectivity rules.
+- Understanding of container security concepts including users, capabilities, and filesystem permissions.
+- Files and configurations from Session A for continuity and verification tasks (optional).
+
+**Common Prerequisites:**
+
+- Administrative privileges on the local system for managing Docker containers and networks.
+- Sufficient system resources (CPU, memory, disk) to run multiple Docker containers simultaneously.
+- Internet connectivity for downloading Docker images, Kubernetes components, and security tools.
+- Basic familiarity with command-line operations including Docker commands, kubectl commands, and shell scripting.
+- Understanding of file permissions and the importance of protecting credentials and configuration files.
+
+**Security Note:** This lab uses local development tools (kind clusters, self-signed certificates, basic authentication) that are appropriate for learning and testing but would require additional hardening for production deployments. Production systems should use managed Kubernetes services (EKS, AKS, GKE) with proper IAM integration, certificate authorities for TLS, enterprise authentication systems (LDAP, SAML, OIDC), network policies, pod security policies, comprehensive audit logging, and regular security assessments.
 
 ---
 
-## Session A: Authentication & Authorization
+## Session A (Week 7) — Authentication & Authorization
 
-Session A focuses on controlling **WHO** gets access to systems and **WHAT** they are allowed to do.
+Session A focuses on controlling **WHO** gets access to systems and **WHAT** they are allowed to do once authenticated. Authentication verifies identity using credentials (passwords, tokens, biometrics), while authorization enforces permissions based on roles and policies. These two concepts work together to provide secure access control—authentication without authorization would allow any authenticated user to perform any action, while authorization without proper authentication would be meaningless. Understanding this distinction is critical for implementing defense-in-depth security strategies in cloud environments.
 
----
+### Task 1 — Authentication: Password-Protected Service
 
-### Task 1: Authentication - Password-Protected Service
+HTTP Basic authentication is a simple authentication mechanism built into the HTTP protocol where clients send username and password credentials with each request. The credentials are Base64-encoded (not encrypted) in the HTTP Authorization header, which is why HTTPS/TLS is essential when using Basic authentication in production to prevent credential theft through eavesdropping. In this task, nginx web server was configured to require valid credentials before allowing access to protected resources, demonstrating that authentication controls WHO can access services by rejecting unauthenticated requests and accepting authenticated requests.
 
-**Objective:** Run a web service behind HTTP Basic authentication where only requests with valid credentials get access.
+#### Purpose
 
-#### Step 1.1: Create Password File
+- Create an htpasswd file containing hashed passwords for user authentication.
+- Configure nginx to require HTTP Basic authentication for all requests to protected resources.
+- Deploy an authentication-protected web service in a Docker container.
+- Demonstrate that requests without credentials are rejected with HTTP 401 Unauthorized.
+- Verify that requests with valid credentials receive HTTP 200 OK responses.
+- Understand the key-distribution problem: how do users securely receive and store passwords?
+
+#### Terminal Commands
 
 ```bash
+# Create a password file (user: student)
 docker run --rm httpd:alpine htpasswd -nbB student 'P@ssw0rd!' > htpasswd.txt
-```
 
-**Purpose:** Generate a bcrypt-hashed password file for the user `student` with password `P@ssw0rd!`
-
-#### Step 1.2: Create Nginx Configuration
-
-```bash
+# Serve a page that requires authentication
 cat > default.conf <<'EOF'
 server { listen 80;
  location / { auth_basic "Restricted";
  auth_basic_user_file /etc/nginx/.htpasswd;
  return 200 'Authenticated OK\n'; } }
 EOF
-```
 
-**Purpose:** Configure nginx to require HTTP Basic authentication for all requests.
-
-#### Step 1.3: Start the Authentication Service
-
-```bash
 docker run --rm -d --name authsvc -p 8080:80 \
  -v $(pwd)/default.conf:/etc/nginx/conf.d/default.conf \
  -v $(pwd)/htpasswd.txt:/etc/nginx/.htpasswd nginx
-```
 
-**Purpose:** Start nginx container with authentication enabled on port 8080.
-
-#### Step 1.4: Test Without Credentials (Should Fail)
-
-```bash
 curl -s -o /dev/null -w 'no-creds: %{http_code}\n' http://localhost:8080
-```
-
-**Expected Output:**
-```
-no-creds: 401
-```
-
-**✅ Result:** Access denied - received HTTP 401 Unauthorized
-
-#### Step 1.5: Test With Valid Credentials (Should Succeed)
-
-```bash
 curl -s -u student:'P@ssw0rd!' http://localhost:8080
 ```
 
-**Expected Output:**
-```
-Authenticated OK
-```
+#### Explanation of the Commands
 
-**✅ Result:** Access granted - received HTTP 200 with "Authenticated OK" message
+- `docker run --rm httpd:alpine htpasswd -nbB student 'P@ssw0rd!'` uses Apache's htpasswd utility in the httpd Alpine container to generate a bcrypt-hashed password entry for username "student" with password "P@ssw0rd!"—the `-n` flag outputs to stdout instead of a file, `-b` accepts the password from the command line, and `-B` uses bcrypt hashing for stronger security than MD5.
+- `> htpasswd.txt` redirects the htpasswd output to a file that nginx will use for authentication, storing the username and bcrypt hash (the password itself is never stored in plaintext).
+- The `cat > default.conf <<'EOF'` heredoc creates an nginx configuration file that defines a server listening on port 80 with Basic authentication enabled—the `auth_basic "Restricted"` directive enables authentication with a realm message, and `auth_basic_user_file /etc/nginx/.htpasswd` specifies where nginx should find the password file.
+- `return 200 'Authenticated OK\n'` is a simple response that nginx sends when authentication succeeds, demonstrating that the protected resource was accessed successfully without setting up a full web application.
+- `docker run --rm -d --name authsvc -p 8080:80` starts an nginx container in detached mode, mapping host port 8080 to container port 80, with `--rm` ensuring automatic cleanup when stopped.
+- `-v $(pwd)/default.conf:/etc/nginx/conf.d/default.conf` mounts the nginx configuration file into the container where nginx reads additional configuration—this volume mount allows us to customize nginx behavior without rebuilding the image.
+- `-v $(pwd)/htpasswd.txt:/etc/nginx/.htpasswd` mounts the password file into the container at the path specified in the nginx configuration for authentication validation.
+- `curl -s -o /dev/null -w 'no-creds: %{http_code}\n' http://localhost:8080` makes an HTTP request without credentials, with `-s` for silent mode, `-o /dev/null` discarding response body, and `-w` printing only the HTTP status code—this should return 401 Unauthorized demonstrating authentication enforcement.
+- `curl -s -u student:'P@ssw0rd!' http://localhost:8080` makes an HTTP request with Basic authentication credentials using the `-u` flag, which should return 200 OK and display "Authenticated OK" proving that valid credentials grant access.
 
-#### Evidence - Task 1
+#### Evidence
 
-![Task 1 Authentication - Part 1](evidence/Task%201%20Authentication%201.png)
-*Figure 1.1: Creating password file and nginx configuration*
+![Task 1 Authentication - Setup](evidence/Task%201%20Authentication%201.png)
 
-![Task 1 Authentication - Part 2](evidence/Task%201%20Authentication%202.png)
-*Figure 1.2: Testing authentication - 401 without credentials, 200 with valid credentials*
+The screenshot shows the creation of the htpasswd file and nginx configuration, followed by the Docker container startup, confirming that the authentication service was deployed successfully.
 
-#### Key Learning - Task 1
+![Task 1 Authentication - Testing](evidence/Task%201%20Authentication%202.png)
 
-- **Authentication** verifies identity: "Are you who you claim to be?"
-- HTTP Basic authentication requires valid credentials (username + password)
-- Unauthenticated requests are rejected with HTTP 401
-- Authenticated requests proceed and receive HTTP 200
+The screenshot demonstrates the authentication testing with curl showing "no-creds: 401" for the unauthenticated request and "Authenticated OK" for the authenticated request, proving that authentication enforcement works correctly.
+
+#### Notes
+
+The authentication task successfully demonstrated that HTTP Basic authentication provides identity verification by rejecting unauthorized access. However, this also reveals challenges: passwords must be transmitted with every request (requiring HTTPS to prevent interception), users must remember complex passwords, and passwords can be stolen through phishing or keyloggers. These limitations motivate the need for multi-factor authentication (Task 2) which adds a second verification factor that attackers cannot easily steal or replicate.
 
 ---
 
-### Task 2: Add a Second Factor (MFA/TOTP)
+### Task 2 — Add a Second Factor (MFA / TOTP)
 
-**Objective:** Implement Multi-Factor Authentication using Time-based One-Time Password (TOTP), the same mechanism used by authenticator apps like Google Authenticator.
+Multi-factor authentication (MFA) significantly strengthens security by requiring two or more independent authentication factors from different categories: something you know (password), something you have (phone, hardware token), or something you are (biometric). Time-based One-Time Password (TOTP) is a common MFA implementation that generates 6-digit codes using a shared secret and the current time, with codes changing every 30 seconds. TOTP is standardized in RFC 6238 and is used by Google Authenticator, Microsoft Authenticator, and many other authenticator apps. The security comes from the fact that even if an attacker steals your password, they still need access to your physical device that generates the time-based codes, making credential theft attacks much harder to execute successfully.
 
-#### Step 2.1: Generate Shared Secret
+#### Purpose
+
+- Generate a cryptographically random shared secret for TOTP authentication.
+- Use oathtool to generate time-based one-time passwords from the shared secret.
+- Implement MFA validation by comparing user-entered codes with expected values.
+- Understand that TOTP codes are time-synchronized and expire every 30 seconds.
+- Demonstrate that MFA defeats credential theft attacks even when passwords are compromised.
+
+#### Terminal Commands
 
 ```bash
+# Create a shared secret (base32) and generate the current 6-digit code
 SECRET=$(head -c20 /dev/urandom | base32)
 echo "Enrol this secret in an authenticator app: $SECRET"
-```
-
-**Purpose:** Create a base32-encoded random secret that serves as the shared key between server and client.
-
-#### Step 2.2: Generate Current TOTP Code
-
-```bash
 oathtool --totp -b "$SECRET"
-```
 
-**Purpose:** Generate the current 6-digit time-based code (changes every 30 seconds).
-
-#### Step 2.3: Validate User-Entered Code
-
-```bash
+# Validate a code the user types (compare to the expected value)
 read -p 'Enter the 6-digit code: ' CODE
 [ "$CODE" = "$(oathtool --totp -b "$SECRET")" ] && echo 'MFA OK' || echo 'MFA FAILED'
 ```
 
-**Purpose:** Compare user input with the expected TOTP code to validate the second factor.
+#### Explanation of the Commands
 
-#### Evidence - Task 2
+- `SECRET=$(head -c20 /dev/urandom | base32)` generates a 20-byte cryptographically random secret by reading from `/dev/urandom` (Linux's cryptographic random number generator) and encoding it in base32 format, which is the standard encoding for TOTP shared secrets that can be safely typed or transmitted as text.
+- `echo "Enrol this secret in an authenticator app: $SECRET"` displays the shared secret that would be entered into an authenticator app (Google Authenticator, Authy, Microsoft Authenticator) or encoded as a QR code for mobile device scanning—this secret must be kept confidential because anyone who possesses it can generate valid TOTP codes.
+- `oathtool --totp -b "$SECRET"` generates the current 6-digit TOTP code using the shared secret, with `--totp` specifying time-based OTP mode and `-b` indicating the secret is base32-encoded—this command computes the same code that an authenticator app would display.
+- The TOTP algorithm uses HMAC-SHA1 with the shared secret and the current Unix timestamp divided by 30 seconds, ensuring that both the server and the client device generate the same code when their clocks are synchronized.
+- `read -p 'Enter the 6-digit code: ' CODE` prompts the user to enter the 6-digit code they see in their authenticator app or generated with oathtool, simulating the user authentication flow where they type their second factor.
+- `[ "$CODE" = "$(oathtool --totp -b "$SECRET")" ]` compares the user-entered code with the freshly computed expected code, implementing TOTP validation—the comparison must happen within the same 30-second time window or validation fails.
+- `&& echo 'MFA OK' || echo 'MFA FAILED'` outputs the result of the validation, with "MFA OK" indicating successful second-factor verification and "MFA FAILED" indicating an incorrect code (wrong secret, clock skew, or expired code).
+
+#### Evidence
 
 ![Task 2 MFA/TOTP](evidence/Task%202.png)
-*Figure 2.1: MFA implementation - Secret generation, TOTP code (045367), and successful validation "MFA OK"*
 
-**✅ Result:** MFA successfully validated with code **045367** - Output shows "MFA OK"
+The screenshot demonstrates the generation of the TOTP shared secret, the current 6-digit code (045367), user input of the code, and successful validation with "MFA OK" output, proving that time-based multi-factor authentication works correctly.
 
-#### Key Learning - Task 2
+#### Notes
 
-- **MFA combines factors from different classes:**
-  - Something you know (password)
-  - Something you have (TOTP device/app)
-- **TOTP codes are time-synchronized:** valid for 30-second windows
-- **MFA defeats the majority of credential attacks** - the cheapest big security win
-- Even if an attacker steals your password, they cannot authenticate without the second factor
+The MFA task demonstrated why TOTP is considered "the cheapest big security win" in cybersecurity—it defeats the vast majority of credential-based attacks (phishing, password reuse, brute force, keyloggers) with relatively simple implementation. According to industry research, MFA blocks over 99% of automated credential stuffing attacks because attackers cannot generate valid TOTP codes without physical access to the victim's device. Production implementations should consider TOTP code validation windows (allowing previous/next time periods for clock skew), rate limiting to prevent code guessing, backup codes for device loss, and user education about keeping the shared secret secure.
 
 ---
 
-### Task 3: Authorization - RBAC Roles
+### Task 3 — Authorization: RBAC Roles
 
-**Objective:** Demonstrate the difference between authentication and authorization. Authentication proves identity; authorization decides permissions using Role-Based Access Control (RBAC).
+Role-Based Access Control (RBAC) is an authorization model where permissions are assigned to roles rather than individual users, and users are assigned to roles based on their job function. Kubernetes RBAC uses four API resources: Role (defines permissions in a namespace), ClusterRole (defines cluster-wide permissions), RoleBinding (grants Role permissions to users/service accounts in a namespace), and ClusterRoleBinding (grants ClusterRole permissions cluster-wide). RBAC implements the principle of least privilege by granting users only the minimum permissions necessary to perform their job functions. In this task, a developer role was created with read-only access to pods, demonstrating that even authenticated users should have limited permissions based on their responsibilities.
 
-#### Step 3.1: Create Kubernetes Cluster
+#### Purpose
+
+- Create a Kubernetes cluster using kind for RBAC testing and configuration.
+- Create a namespace and service account to represent a developer user identity.
+- Define a Role with limited permissions (get, list pods only—no create, update, delete).
+- Bind the Role to the service account using a RoleBinding to grant permissions.
+- Test authorization using kubectl auth can-i commands to verify allowed and denied operations.
+- Understand that authentication proves identity while authorization enforces permissions.
+
+#### Terminal Commands
 
 ```bash
 kind create cluster --name ccse-lab4
 kubectl create namespace app
 kubectl create serviceaccount dev -n app
-```
 
-**Purpose:** Set up a Kubernetes environment with a namespace and service account for testing RBAC.
-
-#### Step 3.2: Create Developer Role (Read-Only Pods)
-
-```bash
+# Developer may only read pods
 kubectl create role dev-role -n app --verb=get,list --resource=pods
 kubectl create rolebinding dev-rb -n app --role=dev-role --serviceaccount=app:dev
-```
 
-**Purpose:** Create a role that allows ONLY reading pods (get, list operations). No create, update, or delete permissions.
-
-#### Step 3.3: Test Authorization - What Can the Developer Do?
-
-```bash
 SA=system:serviceaccount:app:dev
-kubectl auth can-i list pods -n app --as=$SA        # Should return: yes
-kubectl auth can-i create deploy -n app --as=$SA    # Should return: no
-kubectl auth can-i delete pods -n app --as=$SA      # Should return: no
+kubectl auth can-i list pods -n app --as=$SA      # yes
+kubectl auth can-i create deploy -n app --as=$SA  # no
+kubectl auth can-i delete pods -n app --as=$SA    # no
 ```
 
-**Purpose:** Verify that the developer role follows the principle of **least privilege** - only permitted actions are allowed.
+#### Explanation of the Commands
 
-#### Evidence - Task 3
+- `kind create cluster --name ccse-lab4` creates a local Kubernetes cluster using kind (Kubernetes in Docker), which runs Kubernetes components in Docker containers for development and testing purposes—this provides a full-featured Kubernetes API without requiring cloud resources or complex setup.
+- `kubectl create namespace app` creates a new namespace called "app" which provides logical isolation and scope for resources—namespaces allow teams to share a cluster while maintaining separate environments and access controls.
+- `kubectl create serviceaccount dev -n app` creates a ServiceAccount named "dev" in the app namespace, which represents a developer identity that applications or users can authenticate as—service accounts are Kubernetes-native identity objects used for RBAC authorization.
+- `kubectl create role dev-role -n app --verb=get,list --resource=pods` creates a Role that defines a set of permissions: the verbs `get` and `list` allow reading pod information, but notably excludes `create`, `update`, `delete`, `patch` and other write operations—this implements least privilege by granting only read access.
+- `kubectl create rolebinding dev-rb -n app --role=dev-role --serviceaccount=app:dev` creates a RoleBinding that connects the Role to the ServiceAccount, effectively granting the "dev" service account the permissions defined in "dev-role"—without this binding, the role would exist but grant no actual permissions.
+- `SA=system:serviceaccount:app:dev` stores the full ServiceAccount identity string in a shell variable for easier reuse in authorization tests—the format `system:serviceaccount:<namespace>:<name>` is how Kubernetes internally identifies service accounts.
+- `kubectl auth can-i list pods -n app --as=$SA` tests whether the dev service account has permission to list pods in the app namespace using the `--as` flag for impersonation—this should return "yes" because listing pods is explicitly allowed by the dev-role.
+- `kubectl auth can-i create deploy -n app --as=$SA` tests whether the dev service account can create deployments—this should return "no" because the role only grants permissions for pods, not deployments, demonstrating resource-level authorization.
+- `kubectl auth can-i delete pods -n app --as=$SA` tests whether the dev service account can delete pods—this should return "no" because the role only allows `get` and `list` verbs, not `delete`, demonstrating operation-level authorization enforcement.
+
+#### Evidence
 
 ![Task 3 RBAC Authorization](evidence/Task%203.png)
-*Figure 3.1: Kubernetes cluster creation, RBAC role configuration, and authorization testing*
 
-**✅ Results:**
-- `kubectl auth can-i list pods -n app --as=$SA` → **yes** ✅
-- `kubectl auth can-i create deploy -n app --as=$SA` → **no** ❌
-- `kubectl auth can-i delete pods -n app --as=$SA` → **no** ❌
+The screenshot shows the Kubernetes cluster creation, namespace and service account setup, role and rolebinding configuration, and authorization testing with three can-i commands returning "yes" for list pods and "no" for create deployments and delete pods, confirming that RBAC authorization enforcement works correctly.
 
-#### Key Learning - Task 3
+#### Notes
 
-- **Authentication vs Authorization:**
-  - **Authentication (Task 1):** Proves WHO you are
-  - **Authorization (Task 3):** Decides WHAT you can do
-- **RBAC enforces least privilege:** Users get only the permissions they need, nothing more
-- The developer identity is authenticated to the cluster but authorized for only limited read operations
-- This prevents unauthorized actions even from legitimate users
-
----
-
-### Session A Summary
+The RBAC task demonstrated the critical distinction between authentication and authorization: the dev service account is authenticated to the Kubernetes API (proven by successful kubectl commands), but authorization policies limit what actions it can perform. This implements defense-in-depth where compromising one account doesn't automatically grant full cluster access. Production Kubernetes clusters should use RBAC extensively with roles for different job functions (developers, operators, auditors), namespace-level isolation for teams and applications, ClusterRoles for cluster-wide resources, regular permission audits, and integration with enterprise identity providers (LDAP, Active Directory, OIDC) rather than static service accounts.
 
 **End of Session A** - Authentication service stopped:
 ```bash
 docker stop authsvc
 ```
 
-**Completed Controls:**
-- ✅ Authentication with password protection (401/200 results)
-- ✅ Multi-Factor Authentication with TOTP (MFA OK)
-- ✅ Authorization with RBAC (yes/no/no results)
+Session A successfully demonstrated controlling WHO gets access (authentication with passwords and MFA) and WHAT they can do (authorization with RBAC). Session B will build on these access controls by implementing network security and host hardening to control WHAT resources can be reached and WHAT capabilities attackers could exploit.
 
 ---
 
-## Session B: Network Security & Hardening
+## Session B (Week 8) — Network Security & Hardening
 
-Session B focuses on controlling **WHAT** authenticated users can reach and reducing **WHAT** an intruder could exploit through network segmentation and container hardening.
+Session B transitions from access control (WHO and WHAT permissions) to network security and host hardening (WHAT resources can be reached and WHAT capabilities exist). While Session A controlled access through authentication and authorization, Session B implements defense-in-depth by adding network-level isolation to limit lateral movement after authentication and host-level hardening to reduce the attack surface available to authenticated users or compromised services. The principle is that even if an attacker breaches authentication controls, network segmentation prevents them from reaching sensitive resources, and container hardening limits what they can do with compromised containers.
 
----
+### Task 4 — Network Segmentation (Three-Tier)
 
-### Task 4: Network Segmentation (Three-Tier)
+Network segmentation is a security architecture pattern that divides a network into isolated segments with controlled connectivity between them. Three-tier architecture is a common segmentation pattern with distinct frontend (web/presentation), backend (application logic), and database (data storage) tiers, where each tier can only communicate with its adjacent tier—frontend cannot directly reach database, implementing the principle of least privilege at the network level. This segmentation provides defense-in-depth because an attacker who compromises the internet-facing web tier still cannot directly access the database tier, forcing them to breach multiple security boundaries and providing opportunities for detection and response.
 
-**Objective:** Implement defense in depth by separating frontend, backend, and database into isolated Docker networks. The frontend cannot reach the database directly, limiting lateral movement.
+#### Purpose
 
-#### Step 4.1: Create Isolated Networks
+- Create isolated Docker networks to implement three-tier segmentation architecture.
+- Deploy database tier on backend network only (no internet exposure).
+- Deploy application tier connected to both frontend and backend networks (bridge).
+- Deploy web tier on frontend network only (internet-facing).
+- Demonstrate that web tier cannot reach database tier directly (segmentation working).
+- Verify that application tier can reach database tier (expected connectivity preserved).
+- Understand that segmentation contains lateral movement and limits blast radius.
+
+#### Terminal Commands
 
 ```bash
+# Create two segmented networks
 docker network create frontend-net
 docker network create backend-net
-```
 
-**Purpose:** Create two separate network segments for isolation.
-
-#### Step 4.2: Deploy Three-Tier Architecture
-
-```bash
-# Database - only on backend network
+# DB only on backend-net; app on both; web only on frontend-net
 docker run -d --name db --network backend-net redis:alpine
-
-# Application - connected to BOTH networks (bridge tier)
 docker run -d --name app --network backend-net nginx
 docker network connect frontend-net app
-
-# Web - only on frontend network (internet-facing)
 docker run -d --name web --network frontend-net nginx
-```
 
-**Purpose:** Create a segmented architecture where:
-- **db** (database) → backend-net only
-- **app** (application) → backend-net + frontend-net (bridge)
-- **web** (frontend) → frontend-net only
-
-#### Step 4.3: Test Segmentation - Web → Database (Should FAIL)
-
-```bash
+# web -> db should FAIL (not on the same network)
 docker exec web sh -c 'apk add -q curl; curl -s -m 3 db:6379 || echo BLOCKED'
-```
 
-**Expected Output:**
-```
-BLOCKED
-```
-
-**✅ Result:** Web tier CANNOT reach database directly - segmentation working
-
-#### Step 4.4: Test Connectivity - App → Database (Should WORK)
-
-```bash
+# app -> db should WORK (shared backend-net)
 docker exec app sh -c 'apk add -q curl; nc -z -w3 db 6379 && echo REACHABLE'
 ```
 
-**Expected Output:**
-```
-REACHABLE
-```
+#### Explanation of the Commands
 
-**✅ Result:** Application tier CAN reach database - expected connectivity preserved
+- `docker network create frontend-net` and `docker network create backend-net` create two isolated bridge networks with their own IP address ranges and network isolation—containers on different networks cannot communicate unless explicitly connected to multiple networks.
+- `docker run -d --name db --network backend-net redis:alpine` deploys a Redis database container connected only to the backend network, ensuring the database is not exposed to the frontend network where internet-facing services reside—this implements the security principle that sensitive data stores should not be directly reachable from the internet.
+- `docker run -d --name app --network backend-net nginx` deploys an application container initially connected to the backend network where it can reach the database.
+- `docker network connect frontend-net app` connects the application container to the frontend network as well, making it a bridge between the two isolated networks—this allows the app to receive requests from the web tier and query the database tier while preventing direct web-to-database connectivity.
+- `docker run -d --name web --network frontend-net nginx` deploys a web server container connected only to the frontend network, simulating an internet-facing service—this container can reach the application tier but cannot reach the database tier directly due to network isolation.
+- `docker exec web sh -c 'apk add -q curl; curl -s -m 3 db:6379 || echo BLOCKED'` tests network segmentation by attempting to connect from the web container to the database—the command installs curl (Alpine doesn't include it by default), attempts to connect to the db hostname on port 6379 with a 3-second timeout, and echoes "BLOCKED" if the connection fails (which it should due to network isolation).
+- `docker exec app sh -c 'apk add -q curl; nc -z -w3 db 6379 && echo REACHABLE'` verifies that expected connectivity is preserved by testing the application-to-database connection—nc (netcat) with `-z` performs a port scan, `-w3` sets a 3-second timeout, and "REACHABLE" is printed if the connection succeeds, proving that the app tier can still access the database tier as required.
 
-#### Evidence - Task 4
+#### Evidence
 
-![Task 4 Network Segmentation - Part 1](evidence/Task%204%20Network%20segmentation%201.png)
-*Figure 4.1: Creating networks and deploying three-tier architecture*
+![Task 4 Network Segmentation - Setup](evidence/Task%204%20Network%20segmentation%201.png)
 
-![Task 4 Network Segmentation - Part 2](evidence/Task%204%20Network%20segmentation%202.png)
-*Figure 4.2: Testing network segmentation - web→db BLOCKED, app→db REACHABLE*
+The screenshot shows the creation of two isolated networks (frontend-net and backend-net) and the deployment of three containers with proper network assignments, confirming that the three-tier architecture was established successfully.
 
-#### Key Learning - Task 4
+![Task 4 Network Segmentation - Testing](evidence/Task%204%20Network%20segmentation%202.png)
 
-- **Network segmentation implements defense in depth**
-- The database is unreachable from the internet-facing tier
-- **Security benefit:** An attacker who compromises the web tier still cannot talk directly to the data
-- **Segmentation contains lateral movement** - limits blast radius of a breach
-- This mirrors cloud security architectures with public/private subnets
+The screenshot demonstrates the network segmentation testing with the web-to-database test showing "BLOCKED" and the app-to-database test showing "REACHABLE", proving that network isolation works correctly while preserving required connectivity.
+
+#### Notes
+
+The network segmentation task successfully demonstrated defense-in-depth through network isolation. An attacker who compromises the web tier cannot directly query or dump the database, significantly reducing the impact of a breach. This architecture mirrors cloud security patterns with public subnets (web tier), private subnets (database tier), and application load balancers or API gateways (app tier) connecting them. Production implementations should enhance this pattern with Network Policies in Kubernetes, security groups in cloud providers, microsegmentation with service meshes, and zero-trust networking that requires authentication for every network connection rather than relying solely on network boundaries.
 
 ---
 
-### Task 5: Firewall Rules (Default-Deny)
+### Task 5 — Firewall Rules (Default-Deny)
 
-**Objective:** Apply host-level firewall rules using the **default-deny** principle - nothing is allowed unless explicitly permitted. This mirrors cloud security group configurations.
+Host-based firewalls provide network-level access control at the operating system or container level, complementing network segmentation by enforcing rules about what traffic is allowed to reach services. The default-deny firewall policy is a fundamental security principle where all traffic is blocked by default, and only explicitly necessary traffic is allowed through specific rules—this is the opposite of default-allow (permit everything except explicitly blocked traffic) which is inherently less secure. This approach mirrors cloud security groups (AWS, Azure, GCP) where inbound traffic is denied by default and teams must create explicit allow rules for required services, implementing the principle of least privilege at the network layer.
 
-#### Step 5.1: Configure iptables with Default-Deny + Allow HTTPS
+#### Purpose
+
+- Understand the default-deny firewall policy (deny all, then explicitly allow required traffic).
+- Configure iptables firewall rules inside a container to demonstrate host-level filtering.
+- Set default INPUT policy to DROP to block all incoming traffic by default.
+- Create explicit ACCEPT rules for required services (HTTPS port 443).
+- Allow loopback interface traffic for localhost communication.
+- Understand the relationship between host firewalls and cloud security groups.
+
+#### Terminal Commands
 
 ```bash
+# Inside a throwaway container with iptables, model default-deny + allow 443
 docker run --rm --cap-add=NET_ADMIN alpine sh -c '\
  apk add -q iptables; \
  iptables -P INPUT DROP; \
@@ -357,112 +394,91 @@ docker run --rm --cap-add=NET_ADMIN alpine sh -c '\
  iptables -L INPUT -n'
 ```
 
-**Configuration Breakdown:**
-- `iptables -P INPUT DROP` → **Default policy: DROP** (deny all by default)
-- `iptables -A INPUT -p tcp --dport 443 -j ACCEPT` → Allow ONLY port 443 (HTTPS)
-- `iptables -A INPUT -i lo -j ACCEPT` → Allow loopback interface (localhost)
-- `iptables -L INPUT -n` → List the configured rules
+#### Explanation of the Commands
 
-#### Evidence - Task 5
+- `docker run --rm --cap-add=NET_ADMIN alpine sh -c` launches a temporary Alpine Linux container with the NET_ADMIN capability, which is required to modify network configuration including firewall rules—without this capability, iptables commands would fail with permission errors.
+- `apk add -q iptables` installs the iptables package in Alpine Linux (minimal container images don't include firewall tools by default) with `-q` for quiet output to reduce terminal noise.
+- `iptables -P INPUT DROP` sets the default policy for the INPUT chain to DROP, meaning any incoming packet that doesn't match an explicit ACCEPT rule will be dropped—this implements the default-deny principle where security is the default state.
+- `iptables -A INPUT -p tcp --dport 443 -j ACCEPT` appends a rule to the INPUT chain that accepts TCP traffic destined for port 443 (HTTPS)—the `-A` flag appends to the chain, `-p tcp` specifies the protocol, `--dport 443` matches the destination port, and `-j ACCEPT` specifies the action to take for matching packets.
+- `iptables -A INPUT -i lo -j ACCEPT` accepts all traffic on the loopback interface (`lo`), which is essential for localhost communication between processes on the same host—without this rule, local services couldn't communicate with each other even when the security policy doesn't require network-level isolation for localhost.
+- `iptables -L INPUT -n` lists the rules in the INPUT chain in numeric format (IP addresses and port numbers instead of hostnames and service names), displaying the configured firewall policy to verify that the rules were applied correctly.
+
+#### Evidence
 
 ![Task 5 Firewall Rules](evidence/Task%205.png)
-*Figure 5.1: iptables default-deny configuration with explicit ACCEPT rules for port 443 and loopback*
 
-**✅ Result:** Firewall configured with:
-- Chain INPUT (policy **DROP**)
-- Target ACCEPT for tcp dpt:443
-- Target ACCEPT for all on loopback interface
+The screenshot shows the iptables configuration with Chain INPUT policy set to DROP, followed by two ACCEPT rules for tcp dpt:443 and all traffic on the loopback interface, confirming that the default-deny firewall policy was successfully configured.
 
-#### Key Learning - Task 5
+#### Notes
 
-- **Default-deny firewall policy:** Nothing is allowed unless you explicitly permit it
-- This is the **security-group model** used in cloud environments (AWS Security Groups, Azure NSGs)
-- **Least privilege for the network:** Only necessary ports are opened
-- Reduces attack surface by blocking all unexpected traffic
-- In production, you would allow only required ports (22 for SSH, 443 for HTTPS, etc.)
+The firewall rules task demonstrated the security-group model where nothing is allowed unless explicitly permitted. This default-deny approach provides strong security because forgotten services or misconfigurations automatically result in denied access rather than unintended exposure. In production environments, firewall rules should be carefully designed to allow only necessary traffic (SSH from bastion hosts, HTTPS from load balancers, database ports from application subnets), regularly audited to remove obsolete rules, version controlled for tracking changes, and automated through infrastructure-as-code to prevent manual configuration errors. Cloud security groups implement this same model with additional features like stateful firewalling (allowing return traffic for established connections automatically), integration with service discovery (allowing traffic from security groups rather than IP addresses), and central management through cloud control planes.
 
 ---
 
-### Task 6: Container/Host Hardening
+### Task 6 — Container / Host Hardening
 
-**Objective:** Reduce the attack surface by building a minimal, non-root, capability-dropped, read-only container and scanning it for vulnerabilities.
+Container hardening is the practice of reducing the attack surface of container deployments by applying security controls that limit what attackers can do even if they gain code execution inside a container. The principle is defense-in-depth: encryption and authentication protect data and access, network segmentation limits lateral movement, and host hardening limits the capabilities available inside compromised systems. Hardening measures include running as non-root users (limiting privilege escalation), using read-only filesystems (preventing malware persistence), dropping Linux capabilities (removing dangerous kernel features), preventing privilege escalation (blocking setuid exploits), and using minimal base images (reducing vulnerability surface). These controls implement the principle of least privilege at the compute layer.
 
-#### Step 6.1: Run a Hardened Container
+#### Purpose
+
+- Deploy a container with multiple hardening measures applied simultaneously.
+- Configure non-root user (UID/GID 1000) to prevent root-level compromises.
+- Enable read-only filesystem to prevent malware installation and file modifications.
+- Drop all Linux capabilities to remove dangerous kernel-level permissions.
+- Enable no-new-privileges security option to prevent privilege escalation attacks.
+- Use tmpfs for temporary storage that exists only in memory (no persistent writes).
+- Verify hardening configuration using docker inspect commands.
+- Scan container image for vulnerabilities using Trivy to identify security issues.
+- Understand which attacks each hardening measure prevents or mitigates.
+
+#### Terminal Commands
 
 ```bash
+# A hardened run of a service
 docker run -d --name hardened \
- --user 1000:1000 \                  # non-root user
- --read-only \                        # read-only root filesystem
- --cap-drop=ALL \                     # drop all Linux capabilities
- --security-opt no-new-privileges \   # prevent privilege escalation
- --tmpfs /tmp \                       # writable temp directory
+ --user 1000:1000 \           # non-root
+ --read-only \                # read-only root filesystem
+ --cap-drop=ALL \             # drop all Linux capabilities
+ --security-opt no-new-privileges \
+ --tmpfs /tmp \
  nginxinc/nginx-unprivileged
-```
 
-**Hardening Measures Applied:**
-1. **Non-root user (1000:1000)** - Prevents root-level compromises
-2. **Read-only filesystem** - Prevents malware from modifying system files
-3. **All capabilities dropped** - Removes dangerous Linux kernel capabilities
-4. **No new privileges** - Prevents privilege escalation attacks
-5. **Tmpfs for /tmp** - Provides writable space for temporary files only
-
-#### Step 6.2: Verify Hardening Configuration
-
-```bash
 docker inspect hardened --format 'User={{.Config.User}} ReadOnly={{.HostConfig.ReadonlyRootfs}}'
-```
 
-**Expected Output:**
-```
-User=1000:1000 ReadOnly=true
-```
-
-**✅ Result:** Container verified as non-root with read-only filesystem
-
-#### Step 6.3: Scan Image for Vulnerabilities
-
-```bash
+# Scan an image for known vulnerabilities
 docker run --rm aquasec/trivy image --severity HIGH,CRITICAL nginx:alpine | head -20
 ```
 
-**Purpose:** Use Trivy to scan the nginx:alpine image for known HIGH and CRITICAL severity vulnerabilities.
+#### Explanation of the Commands
 
-#### Evidence - Task 6
+- `docker run -d --name hardened` starts a new container in detached mode with the name "hardened" for easy reference and management.
+- `--user 1000:1000` specifies that the container should run as UID 1000 and GID 1000 (non-root) instead of the default root user (UID 0)—this means that even if an attacker achieves code execution inside the container, they have limited user-level privileges rather than root privileges that could be used for privilege escalation or container escape attacks.
+- `--read-only` mounts the container's root filesystem as read-only, preventing any writes to the filesystem except for explicitly mounted volumes or tmpfs—this prevents attackers from installing backdoors, modifying binaries, tampering with logs, or persisting malware across container restarts.
+- `--cap-drop=ALL` drops all Linux capabilities from the container process, removing dangerous kernel-level permissions like CAP_NET_RAW (crafting raw packets), CAP_SYS_ADMIN (mounting filesystems, loading kernel modules), and CAP_NET_BIND_SERVICE (binding privileged ports <1024)—this implements least privilege by removing capabilities the application doesn't need.
+- `--security-opt no-new-privileges` prevents processes inside the container from gaining additional privileges through setuid binaries, filesystem capabilities, or other mechanisms—this blocks common privilege escalation techniques where attackers find vulnerable setuid binaries (like sudo with known exploits) to gain root access.
+- `--tmpfs /tmp` mounts a temporary filesystem in memory at /tmp, providing writable space for temporary files that applications need while ensuring those files don't persist to disk (they're lost when the container stops)—this balances the need for some writable space with the security of read-only filesystems.
+- `nginxinc/nginx-unprivileged` uses a hardened nginx image designed to run as non-root, avoiding the common security antipattern of running web servers as root and then dropping privileges—using purpose-built unprivileged images is more secure than trying to de-privilege root-designed images.
+- `docker inspect hardened --format 'User={{.Config.User}} ReadOnly={{.HostConfig.ReadonlyRootfs}}'` verifies the hardening configuration by extracting the User and ReadonlyRootfs settings from the container's configuration, confirming that the security settings were applied correctly.
+- `docker run --rm aquasec/trivy image --severity HIGH,CRITICAL nginx:alpine` runs Trivy vulnerability scanner to analyze the nginx:alpine image and report all known vulnerabilities with HIGH or CRITICAL severity—Trivy checks the image's packages against vulnerability databases (CVE databases) to identify security issues that should be patched by updating to newer image versions.
+- `| head -20` limits the output to the first 20 lines to show a summary of findings without overwhelming the terminal with hundreds of lines of detailed CVE information.
 
-![Task 6 Container Hardening - Part 1](evidence/Task%206.png)
-*Figure 6.1: Running hardened container with security configurations*
+#### Evidence
 
-![Task 6 Container Hardening - Part 2](evidence/Task%206%20container%202.png)
-*Figure 6.2: Verifying hardening - User=1000:1000, ReadOnly=true*
+![Task 6 Container Hardening - Deployment](evidence/Task%206.png)
 
-![Task 6 Container Hardening - Part 3](evidence/Task%206%20container%203.png)
-*Figure 6.3: Trivy vulnerability scan results for nginx:alpine*
+The screenshot shows the Docker run command deploying the hardened container with all security options configured, confirming that the hardened container was started successfully.
 
-**Scan Results Summary:**
-- **Target:** nginx:alpine (alpine 3.24.1)
-- **Total Vulnerabilities:** 2 (HIGH: 2, CRITICAL: 0)
-- **Status:** Relatively secure base image with minimal vulnerabilities
+![Task 6 Container Hardening - Verification](evidence/Task%206%20container%202.png)
 
-#### Key Learning - Task 6
+The screenshot demonstrates the docker inspect command output showing "User=1000:1000 ReadOnly=true", confirming that the non-root user and read-only filesystem hardening measures were successfully applied.
 
-**Three Hardening Measures and the Attacks They Blunt:**
+![Task 6 Container Hardening - Vulnerability Scan](evidence/Task%206%20container%203.png)
 
-1. **Non-root User (--user 1000:1000)**
-   - **Attack Blunted:** Root-level container escape and privilege escalation
-   - Even if an attacker compromises the container, they have limited user privileges
+The screenshot displays the Trivy vulnerability scan results showing the target nginx:alpine (alpine 3.24.1) with a total of 2 vulnerabilities (HIGH: 2, CRITICAL: 0), demonstrating that vulnerability scanning identified security issues that should be addressed by updating to patched versions.
 
-2. **Read-only Filesystem (--read-only)**
-   - **Attack Blunted:** Malware installation, backdoor deployment, system file modification
-   - Attackers cannot persist malicious code or modify binaries
+#### Notes
 
-3. **Dropped Capabilities (--cap-drop=ALL)**
-   - **Attack Blunted:** Kernel-level exploits, network manipulation, system call abuse
-   - Removes dangerous Linux capabilities that could be exploited
-
-**Additional Security Measures:**
-4. **No New Privileges** - Prevents setuid binary exploits
-5. **Minimal Base Image** - Reduces attack surface by limiting installed packages
-6. **Vulnerability Scanning** - Identifies known CVEs before deployment
+The container hardening task demonstrated how multiple security controls work together to implement defense-in-depth at the compute layer. Each hardening measure addresses specific attack scenarios: non-root users prevent many container escape exploits that require root, read-only filesystems prevent malware persistence and backdoor installation, dropped capabilities prevent kernel-level exploits and privilege escalation, no-new-privileges prevents setuid attacks, and minimal base images reduce the number of installed packages that could contain vulnerabilities. Production container security should also include: using distroless or minimal base images (Alpine, scratch), scanning images in CI/CD pipelines before deployment, implementing Pod Security Standards in Kubernetes, using runtime security tools (Falco, Sysdig) to detect anomalous behavior, enabling AppArmor or SELinux mandatory access control, setting resource limits to prevent resource exhaustion attacks, and implementing security patch management processes to update images regularly.
 
 ---
 
@@ -470,29 +486,43 @@ docker run --rm aquasec/trivy image --severity HIGH,CRITICAL nginx:alpine | head
 
 After completing all tasks, the following verification commands confirm successful implementation:
 
-### Verify RBAC Configuration
-
 ```bash
+# Verify RBAC Configuration
 kubectl get rolebinding dev-rb -n app -o yaml
-```
 
-### Verify Container Hardening
-
-```bash
+# Verify Container Hardening
 docker inspect hardened --format '{{json .HostConfig.CapDrop}}'
 ```
 
-#### Evidence - Verification
+#### Evidence
 
 ![Verification Commands](evidence/Verification%20Command.png)
-*Figure 7.1: Verification of RBAC role binding and container capability drops*
 
-**✅ Results:**
-- Role binding `dev-rb` exists in namespace `app`
-- Resource version confirmed: "616"
-- Role reference: `dev-role`
-- Subject: ServiceAccount `dev` in namespace `app`
-- Capabilities dropped: `["ALL"]` confirmed
+The screenshot displays the verification commands output showing the RBAC role binding configuration with resource version "616", role reference "dev-role", and subject ServiceAccount "dev" in namespace "app", followed by the container capabilities output showing `["ALL"]` confirming all capabilities were dropped, proving that both RBAC and container hardening configurations were successfully applied.
+
+---
+
+## Security Best-Practices Checklist
+
+The following security best practices were implemented and verified throughout this lab:
+
+- [✓] **Service requires authentication** (unauthenticated requests rejected) — Task 1 implemented HTTP Basic authentication with 401 responses for requests without credentials and 200 responses for authenticated requests.
+
+- [✓] **MFA / second factor implemented and validated** — Task 2 generated TOTP shared secrets, calculated time-based codes, and validated user input with "MFA OK" confirmation.
+
+- [✓] **Authorization enforced by RBAC** (least privilege; unauthorized actions denied) — Task 3 configured Kubernetes roles with limited permissions showing "yes" for allowed operations and "no" for denied operations.
+
+- [✓] **Network segmented** so the data tier is unreachable from the front tier — Task 4 demonstrated three-tier architecture with web→database BLOCKED and app→database REACHABLE.
+
+- [✓] **Default-deny firewall** with explicit allow rules — Task 5 configured iptables with DROP policy and explicit ACCEPT rules for required ports.
+
+- [✓] **Container hardened:** non-root, minimal, capabilities dropped, read-only; image scanned — Task 6 deployed containers with User=1000:1000, ReadOnly=true, capabilities dropped, and Trivy scan completed.
+
+- [✓] **Defense-in-depth implemented** — Multiple layers of security controls across access control, network segmentation, and host hardening.
+
+- [✓] **Least privilege applied** — Permissions, network access, and container capabilities limited to minimum necessary.
+
+- [✓] **Before-and-after testing methodology** — Demonstrated authentication enforcement (401/200), authorization validation (yes/no), network isolation (BLOCKED/REACHABLE), and hardening verification.
 
 ---
 
@@ -500,246 +530,215 @@ docker inspect hardened --format '{{json .HostConfig.CapDrop}}'
 
 ### Q1. Explain the difference between authentication and authorization using Tasks 1 and 3.
 
-**Answer:**
+**Authentication (Task 1)** answers the question: *"WHO are you?"* In Task 1, we implemented HTTP Basic authentication where users must prove their identity with credentials (username: `student`, password: `P@ssw0rd!`). Without valid credentials, the system rejects access with HTTP 401 (Unauthorized). With valid credentials, the system recognizes the user and allows access (HTTP 200). Authentication is about **identity verification**.
 
-**Authentication (Task 1)** answers the question: *"WHO are you?"*
-- In Task 1, we implemented HTTP Basic authentication where users must prove their identity with credentials (username: `student`, password: `P@ssw0rd!`)
-- Without valid credentials, the system rejects access with HTTP 401 (Unauthorized)
-- With valid credentials, the system recognizes the user and allows access (HTTP 200)
-- Authentication is about **identity verification**
+**Authorization (Task 3)** answers the question: *"WHAT are you allowed to do?"* In Task 3, we implemented RBAC where the authenticated `dev` service account has limited permissions. The system allows the developer to LIST pods (permitted action → yes). The system denies the developer from CREATE deployments or DELETE pods (unauthorized actions → no). Authorization is about **permission enforcement**.
 
-**Authorization (Task 3)** answers the question: *"WHAT are you allowed to do?"*
-- In Task 3, we implemented RBAC where the authenticated `dev` service account has limited permissions
-- The system allows the developer to LIST pods (permitted action → yes)
-- The system denies the developer from CREATE deployments or DELETE pods (unauthorized actions → no)
-- Authorization is about **permission enforcement**
-
-**Key Difference:**
-- Authentication happens **first** - you must prove who you are
-- Authorization happens **second** - the system decides what you can do based on your identity
-- You can be authenticated but still unauthorized for certain actions
+**Key Difference:** Authentication happens **first**—you must prove who you are. Authorization happens **second**—the system decides what you can do based on your identity. You can be authenticated but still unauthorized for certain actions.
 
 ---
 
 ### Q2. Why is MFA so effective, and which attacks does it defeat?
 
-**Answer:**
-
-**Why MFA is Effective:**
-
-MFA (Multi-Factor Authentication) combines factors from **different security classes**:
-- **Something you know:** Password or PIN
-- **Something you have:** TOTP device, authenticator app, hardware token
-- (Optionally) **Something you are:** Biometrics
+MFA (Multi-Factor Authentication) is effective because it combines factors from **different security classes**: something you know (password) and something you have (TOTP device). This means that attackers must compromise multiple independent factors to gain access, which is significantly harder than stealing a single password.
 
 **Attacks MFA Defeats:**
 
-1. **Credential Theft / Password Breaches**
-   - Stolen passwords are useless without the second factor
-   - Database breaches that expose passwords don't compromise accounts
+1. **Credential Theft / Password Breaches** - Stolen passwords are useless without the second factor.
+2. **Phishing Attacks** - Even if users enter passwords on fake sites, attackers can't access the TOTP device.
+3. **Brute Force Attacks** - Guessing the password isn't enough without TOTP codes that change every 30 seconds.
+4. **Credential Stuffing** - Reused passwords from other breaches won't work without the second factor.
+5. **Keylogger Attacks** - Malware that captures passwords can't capture dynamically generated TOTP codes.
 
-2. **Phishing Attacks**
-   - Even if a user enters their password on a fake site, attackers can't access the TOTP device
-   - Time-limited codes expire quickly (30-second windows)
-
-3. **Brute Force Attacks**
-   - Guessing the password isn't enough - attackers would also need the TOTP code
-   - TOTP codes change every 30 seconds, making brute force impractical
-
-4. **Credential Stuffing**
-   - Reused passwords from other breaches won't work without the second factor
-   - Each account requires its own unique TOTP secret
-
-5. **Keylogger Attacks**
-   - Even if malware captures the password, it can't capture the dynamically generated TOTP codes
-
-**Security Impact:**
-MFA is called **"the cheapest big security win"** because it defeats the majority of credential-based attacks with relatively simple implementation. According to industry research, MFA blocks over 99% of automated attacks.
+According to industry research, MFA blocks over 99% of automated credential-based attacks, making it "the cheapest big security win" in cybersecurity.
 
 ---
 
 ### Q3. How does network segmentation limit the damage of a compromised web server?
 
-**Answer:**
-
-**Network Segmentation Defense in Depth:**
-
-In Task 4, we implemented a three-tier architecture with isolated networks:
-
-**Architecture:**
-- **Frontend Network:** Web server (internet-facing)
-- **Backend Network:** Database server (internal only)
-- **Bridge:** Application server (both networks)
+Network segmentation creates **security boundaries** within infrastructure by isolating services into separate network segments with controlled connectivity. In Task 4, we implemented three-tier architecture with isolated networks:
 
 **How It Limits Damage:**
 
-1. **Prevents Direct Database Access**
-   - The web server cannot communicate directly with the database (we verified: BLOCKED)
-   - An attacker who compromises the web server cannot directly query or dump the database
-   - The attacker cannot steal sensitive data directly
+1. **Prevents Direct Database Access** - The compromised web server cannot communicate directly with the database (we verified: BLOCKED). An attacker cannot directly query or dump sensitive data.
 
-2. **Contains Lateral Movement**
-   - Segmentation creates **security boundaries** within the infrastructure
-   - Compromise of one tier doesn't automatically mean compromise of other tiers
-   - The attacker must breach multiple security layers to move deeper
+2. **Contains Lateral Movement** - Segmentation creates barriers that attackers must breach to move deeper into the infrastructure. Compromising one tier doesn't automatically compromise other tiers.
 
-3. **Reduces Blast Radius**
-   - The impact of a breach is limited to the compromised network segment
-   - Critical data assets (database) remain protected behind additional network barriers
-   - Attack surface is minimized
+3. **Reduces Blast Radius** - The impact of a breach is limited to the compromised network segment. Critical data assets remain protected behind additional network barriers.
 
-4. **Forces Traffic Through Controlled Paths**
-   - All database access must go through the application tier
-   - The application tier can implement additional security controls (authentication, input validation, logging)
-   - Provides a **choke point** for monitoring and access control
+4. **Forces Traffic Through Controlled Paths** - All database access must go through the application tier, which can implement additional security controls (authentication, input validation, logging) and provides a choke point for monitoring.
 
-**Real-World Analogy:**
-This mirrors cloud architectures with:
-- **Public subnets** for internet-facing resources
-- **Private subnets** for databases and sensitive services
-- **Application tier** in between with strict security group rules
-
-**Security Principle:** Defense in depth - multiple layers of security controls so a single point of failure doesn't compromise the entire system.
+This architecture mirrors cloud deployments with public subnets (internet-facing) and private subnets (databases), implementing defense-in-depth where multiple security layers must be breached to reach sensitive resources.
 
 ---
 
 ### Q4. What does a default-deny firewall policy achieve, and how does it relate to cloud security groups?
 
-**Answer:**
-
-**Default-Deny Firewall Policy:**
-
-A **default-deny** policy means:
-- **Default rule:** DENY/DROP all traffic
-- **Exception rules:** Explicitly ALLOW only necessary traffic
-- Security posture: *"Nothing is permitted unless specifically authorized"*
+A **default-deny** firewall policy means all traffic is denied by default, and only explicitly allowed traffic is permitted. The security posture is: *"Nothing is permitted unless specifically authorized."*
 
 **What It Achieves:**
 
-1. **Implements Least Privilege for Network Access**
-   - Only required ports and protocols are open
-   - All unexpected traffic is automatically blocked
-   - Reduces attack surface dramatically
+1. **Implements Least Privilege for Network Access** - Only required ports and protocols are open. All unexpected traffic is automatically blocked.
 
-2. **Prevents Unknown/Unexpected Connections**
-   - New vulnerabilities or services can't be exploited if ports aren't open
-   - Zero-day attacks targeting unexpected ports are blocked by default
-   - Misconfigured services aren't accidentally exposed
+2. **Prevents Unknown/Unexpected Connections** - New vulnerabilities or misconfigured services can't be exploited if their ports aren't open. Zero-day attacks targeting unexpected ports are blocked by default.
 
-3. **Explicit Security Posture**
-   - Security is the default state, not an afterthought
-   - Every allowed connection is documented and intentional
-   - Easier to audit: "What is allowed?" vs. "What is blocked?"
+3. **Explicit Security Posture** - Every allowed connection is documented and intentional. Security is the default state, not an afterthought.
 
-4. **Fails Secure**
-   - If rules are misconfigured, the system defaults to blocking
-   - Errors don't accidentally open access
+4. **Fails Secure** - If rules are misconfigured, the system defaults to blocking. Errors don't accidentally open access.
 
 **Relationship to Cloud Security Groups:**
 
-Cloud security groups (AWS, Azure, GCP) implement the **exact same default-deny model**:
+Cloud security groups (AWS, Azure, GCP) implement the exact same default-deny model:
 
-| Local Firewall (iptables) | Cloud Security Group |
-|---------------------------|---------------------|
-| `iptables -P INPUT DROP` | Default: Deny all inbound |
-| `iptables -A INPUT -p tcp --dport 443 -j ACCEPT` | Inbound rule: Allow TCP 443 |
-| `iptables -A INPUT -i lo -j ACCEPT` | Allow within security group |
+- Default: Deny all inbound traffic
+- Explicit rules: Allow specific ports from specific sources
+- Example: Allow TCP 443 from 0.0.0.0/0 (HTTPS), Allow TCP 22 from 10.0.0.0/8 (SSH from corporate network)
 
-**Cloud Security Group Example:**
-```
-Default: Deny all inbound traffic
-Rule 1: Allow TCP port 443 from 0.0.0.0/0 (HTTPS)
-Rule 2: Allow TCP port 22 from 10.0.0.0/8 (SSH from corporate network)
-Result: Only HTTPS and SSH from specific sources are allowed
-```
-
-**Security Best Practice:**
-- Start with deny-all
-- Add only necessary allow rules
-- Document each exception
-- Review and remove unused rules regularly
-
-This approach is foundational to **Zero Trust** security models: "Never trust, always verify."
+Both local firewalls (iptables) and cloud security groups follow this principle: start with deny-all, add only necessary allow rules, document each exception, and regularly review to remove unused rules.
 
 ---
 
 ### Q5. List the hardening measures you applied and the attack surface each one removes.
 
-**Answer:**
-
-**Container Hardening Measures and Attack Surface Reduction:**
+**Container Hardening Measures:**
 
 | # | Hardening Measure | Attack Surface Removed | Security Benefit |
 |---|------------------|----------------------|-----------------|
-| 1 | **Non-root User** (`--user 1000:1000`) | • Root-level container escapes<br>• Privilege escalation exploits<br>• System-wide modifications | Even if compromised, attacker has limited user privileges; cannot modify system files or access root-only resources |
-| 2 | **Read-only Filesystem** (`--read-only`) | • Malware installation<br>• Backdoor persistence<br>• Binary modification<br>• Log tampering | Attackers cannot write malicious code to disk; prevents persistent threats; limits what attackers can do even with access |
-| 3 | **Drop All Capabilities** (`--cap-drop=ALL`) | • Kernel exploitation<br>• Network manipulation<br>• System call abuse<br>• Advanced container escapes | Removes dangerous Linux capabilities (CAP_NET_RAW, CAP_SYS_ADMIN, etc.); prevents low-level system manipulation |
-| 4 | **No New Privileges** (`--security-opt no-new-privileges`) | • Setuid binary exploits<br>• Privilege escalation via file permissions<br>• Sudo exploitation | Prevents processes from gaining more privileges than the parent; blocks common privilege escalation techniques |
-| 5 | **Minimal Base Image** (nginx-unprivileged) | • Unnecessary packages/tools<br>• Additional vulnerabilities<br>• Attack utilities (shells, compilers) | Fewer installed packages = fewer vulnerabilities; removes tools attackers could use; reduces CVE exposure |
-| 6 | **Tmpfs for /tmp** (`--tmpfs /tmp`) | • Persistent malicious files<br>• Storage-based attacks | Temporary files are stored in memory only; cleared on container restart; provides necessary writable space without persistence |
+| 1 | **Non-root User** (`--user 1000:1000`) | Root-level container escapes, privilege escalation exploits, system-wide modifications | Even if compromised, attacker has limited user privileges; cannot modify system files or access root-only resources |
+| 2 | **Read-only Filesystem** (`--read-only`) | Malware installation, backdoor persistence, binary modification, log tampering | Attackers cannot write malicious code to disk; prevents persistent threats; limits post-exploitation activities |
+| 3 | **Drop All Capabilities** (`--cap-drop=ALL`) | Kernel exploitation, network manipulation, system call abuse, advanced container escapes | Removes dangerous Linux capabilities (CAP_NET_RAW, CAP_SYS_ADMIN); prevents low-level system manipulation |
+| 4 | **No New Privileges** (`--security-opt no-new-privileges`) | Setuid binary exploits, privilege escalation via file permissions, sudo exploitation | Prevents processes from gaining more privileges than parent; blocks common privilege escalation techniques |
+| 5 | **Minimal Base Image** (nginx-unprivileged) | Unnecessary packages/tools, additional vulnerabilities, attack utilities | Fewer installed packages = fewer vulnerabilities; removes tools attackers could use; reduces CVE exposure |
+| 6 | **Tmpfs for /tmp** (`--tmpfs /tmp`) | Persistent malicious files, storage-based attacks | Temporary files stored in memory only; cleared on restart; provides necessary writable space without persistence |
 
-**Combined Security Impact:**
-
-These measures implement **defense in depth** through **least privilege** principles:
-
-1. **Reduces the initial attack surface** - Fewer vulnerabilities to exploit
-2. **Limits what an attacker can do** - Even successful exploits have limited impact
-3. **Prevents lateral movement** - Difficult to move from container to host
-4. **Prevents persistence** - Attackers can't maintain long-term access
-5. **Facilitates detection** - Unusual behavior is more noticeable with restricted capabilities
-
-**Verification Results:**
-- Container runs as UID 1000 (non-root) ✅
-- Root filesystem is read-only ✅
-- All capabilities dropped ✅
-- Trivy scan: Only 2 HIGH vulnerabilities (0 CRITICAL) ✅
-
-**Security Maturity:** This configuration represents **production-grade** container security suitable for sensitive workloads.
+**Combined Security Impact:** These measures implement defense-in-depth through least privilege—they reduce the initial attack surface, limit what attackers can do even with code execution, prevent lateral movement from container to host, prevent persistence mechanisms, and facilitate detection of unusual behavior.
 
 ---
 
-## Security Best-Practices Checklist
+## Conclusion
 
-✅ **Service requires authentication** (unauthenticated requests rejected)
-- Implemented HTTP Basic authentication
-- Unauthenticated requests return 401
-- Verified with curl tests
+This lab successfully demonstrated the complete implementation of access control and network security controls in cloud computing environments, progressing from foundational authentication mechanisms to enterprise-scale security architectures. The two-session structure provided a logical progression from understanding identity and permission controls (authentication with passwords and MFA, authorization with RBAC) to implementing network-level and host-level defense-in-depth strategies (network segmentation, firewall rules, container hardening).
 
-✅ **MFA / second factor implemented and validated**
-- TOTP-based MFA configured
-- Secret generated and tested
-- Validation successful (MFA OK)
+### Key Findings:
 
-✅ **Authorization enforced by RBAC** (least privilege; unauthorized actions denied)
-- Kubernetes RBAC roles created
-- Developer can list pods (authorized)
-- Developer cannot create/delete (unauthorized)
+**1. Identity Is the Security Perimeter:**
 
-✅ **Network segmented** so the data tier is unreachable from the front tier
-- Three-tier architecture implemented
-- Web → Database: BLOCKED ✅
-- App → Database: REACHABLE ✅
+The most critical lesson from this lab is that modern security architectures center around identity rather than network perimeter. Every control implemented—from HTTP Basic authentication to RBAC policies to network segmentation—ultimately asks two fundamental questions: "Are you who you claim to be?" and "Are you allowed to do this?" This identity-centric approach recognizes that traditional perimeter security (firewalls at the network edge) is insufficient in cloud environments where resources are distributed, users are remote, and services communicate across network boundaries.
 
-✅ **Default-deny firewall** with explicit allow rules
-- iptables configured with DROP policy
-- Only port 443 and loopback explicitly allowed
-- All other traffic blocked by default
+**2. Authentication Alone Is Insufficient:**
 
-✅ **Container hardened:** non-root, minimal, capabilities dropped, read-only; image scanned
-- Non-root user (1000:1000) ✅
-- Read-only filesystem ✅
-- All capabilities dropped ✅
-- No new privileges ✅
-- Trivy vulnerability scan completed ✅
+Task 1 demonstrated that authentication proves WHO you are, but without authorization (Task 3), every authenticated user would have full system access. The combination of authentication (proving identity) and authorization (enforcing permissions) implements the principle of least privilege where users get only the access they need for their job function. This prevents insider threats, limits the impact of compromised credentials, and provides audit trails for compliance.
+
+**3. Network Segmentation Provides Defense-in-Depth:**
+
+Task 4 showed that even with proper authentication and authorization, network-level isolation provides an additional security layer. An attacker who compromises authentication controls still cannot reach the database tier due to network segmentation. This defense-in-depth strategy ensures that no single point of failure compromises the entire system, and each security layer must be independently breached.
+
+**4. Default-Deny Is the Foundation of Secure Systems:**
+
+Task 5 demonstrated the default-deny principle where security is the default state and access must be explicitly granted. This approach appears in firewalls (deny all, then allow specific ports), RBAC (no permissions by default, then grant specific roles), and cloud security groups (block all inbound, then allow specific sources). Default-deny ensures that misconfigurations, forgotten services, and new vulnerabilities automatically result in denied access rather than unintended exposure.
+
+**5. Container Hardening Limits Post-Exploitation Impact:**
+
+Task 6 showed that even if attackers bypass authentication, authorization, and network controls, container hardening limits what they can do with compromised systems. Non-root users prevent privilege escalation, read-only filesystems prevent malware persistence, dropped capabilities prevent kernel exploits, and vulnerability scanning identifies weaknesses before deployment. This demonstrates that security must be implemented at every layer—access control, network, and compute.
+
+**6. MFA Is Essential for Modern Security:**
+
+Task 2 demonstrated why MFA is considered "the cheapest big security win"—it defeats over 99% of credential-based attacks with relatively simple implementation. In an era where password breaches are common and phishing is sophisticated, the second factor (something you have) provides critical protection that passwords alone (something you know) cannot provide.
+
+### Real-World Applications:
+
+The techniques learned in this lab are directly applicable to:
+
+**Cloud Access Management:**
+- AWS IAM with MFA enforcement for privileged accounts
+- Azure AD conditional access policies requiring MFA for sensitive resources
+- Google Cloud Identity with TOTP-based verification
+
+**Kubernetes Security:**
+- RBAC policies for multi-tenant clusters
+- Network Policies for pod-to-pod communication control
+- Pod Security Standards for container hardening requirements
+- Service meshes (Istio, Linkerd) for mTLS and authorization
+
+**Enterprise Authentication:**
+- SSO (Single Sign-On) with SAML/OIDC and MFA
+- Zero-trust architectures requiring authentication for every request
+- Privileged Access Management (PAM) systems
+
+**Cloud Network Security:**
+- VPC segmentation with public/private subnets
+- Security groups with default-deny inbound rules
+- Network ACLs for subnet-level filtering
+- Service endpoint restrictions
+
+**Container Security:**
+- CI/CD pipeline integration with vulnerability scanning
+- Runtime security monitoring (Falco, Sysdig)
+- Admission controllers enforcing security policies
+- Distroless and minimal base images
+
+### Future Learning:
+
+This lab establishes the foundation for advanced security topics including:
+
+**Advanced Authentication:**
+- WebAuthn/FIDO2 for passwordless authentication
+- Biometric authentication integration
+- Certificate-based mutual TLS (mTLS)
+- Risk-based adaptive authentication
+
+**Zero-Trust Architecture:**
+- Identity-aware proxies (IAP)
+- Service-to-service authentication
+- Continuous verification and trust evaluation
+- Micro-segmentation beyond network boundaries
+
+**Advanced Kubernetes Security:**
+- OPA (Open Policy Agent) for fine-grained policy enforcement
+- Service mesh security (Istio authorization policies)
+- Pod security admission controllers
+- Secret management with external vaults
+
+**Advanced Container Security:**
+- Runtime behavior monitoring and anomaly detection
+- Supply chain security (image signing, SBOM)
+- Confidential containers with encrypted execution
+- Rootless containers and user namespaces
 
 ---
 
-## Cleanup & Teardown
+## References
 
-After completing the lab and capturing all evidence, clean up resources:
+The following resources were referenced during this lab and provide additional depth for further study:
+
+1. **Course lecture** — Week 5 (Access Control) and Week 9 (Network Security patterns), Prof. Dr. Shahrulniza Musa, UniKL MIIT, covering authentication mechanisms, authorization models, and defense-in-depth strategies.
+
+2. **Docker security documentation** — [https://docs.docker.com/engine/security](https://docs.docker.com/engine/security) — Comprehensive guide to container security, including user namespaces, capabilities, and security options.
+
+3. **Kubernetes RBAC documentation** — [https://kubernetes.io/docs/reference/access-authn-authz/rbac](https://kubernetes.io/docs/reference/access-authn-authz/rbac) — Official documentation for role-based access control in Kubernetes.
+
+4. **RFC 6238** — *TOTP: Time-Based One-Time Password Algorithm* — Specification for TOTP authentication used in Task 2.
+
+5. **NIST SP 800-63B** — *Digital Identity Guidelines: Authentication and Lifecycle Management* — Federal guidelines on authentication strength and multi-factor authentication.
+
+6. **CIS Docker Benchmark** — [https://www.cisecurity.org](https://www.cisecurity.org) — Industry best practices for Docker container hardening.
+
+7. **CIS Kubernetes Benchmark** — Security configuration benchmarks for Kubernetes deployments.
+
+8. **OWASP Top 10** — Understanding of authentication and authorization vulnerabilities including broken access control.
+
+9. **Zero Trust Architecture (NIST SP 800-207)** — Framework for identity-centric security models.
+
+10. **Cloud Security Alliance (CSA) Security Guidance v5** — *Domain 1: Cloud Computing Concepts and Architectures* — Industry best practices for cloud access control and network security.
+
+---
+
+## Appendix: Cleanup Commands
+
+To clean up the lab environment and free system resources, execute the following commands:
 
 ```bash
-# Remove Docker containers
+# Stop and remove Docker containers
 docker rm -f authsvc db app web hardened 2>/dev/null
 
 # Remove Docker networks
@@ -747,93 +746,56 @@ docker network rm frontend-net backend-net 2>/dev/null
 
 # Delete Kubernetes cluster
 kind delete cluster --name ccse-lab4
+
+# Verify cleanup
+docker ps -a
+docker network ls
+kind get clusters
 ```
 
-#### Evidence - Cleanup
+#### Evidence
 
 ![Cleanup & Teardown](evidence/Cleanup%20&%20Teardown.png)
-*Figure 8.1: Resource cleanup - containers, networks, and Kubernetes cluster removed*
 
-**✅ Cleanup Completed:**
-- All containers removed: authsvc, db, app, web, hardened
-- Networks removed: frontend-net, backend-net
-- Kubernetes cluster deleted: ccse-lab4
-- System returned to clean state
+The screenshot shows the execution of cleanup commands removing all containers (authsvc, db, app, web, hardened), networks (frontend-net, backend-net), and the Kubernetes cluster (ccse-lab4), confirming that the lab environment was successfully cleaned up and system resources were freed.
+
+**Note:** The cleanup removes all containers, networks, and clusters created during the lab. The `2>/dev/null` redirects suppress error messages for resources that don't exist, allowing the cleanup script to run safely even if some tasks were not completed. If you need to preserve evidence for report submission, take screenshots before executing cleanup commands.
 
 ---
 
-## Conclusion
+## Acknowledgments
 
-### Lab Summary
+This lab was completed as part of the IKB42603 Cloud Computing Security Essentials course at Universiti Kuala Lumpur Malaysian Institute of Information Technology (UniKL MIIT). Special thanks to:
 
-This lab successfully demonstrated critical cloud security controls across two key domains:
+- **Prof. Dr. Shahrulniza Musa** for developing the comprehensive lab curriculum covering authentication, authorization, network security, and container hardening techniques, and for providing expert guidance on cloud security principles and defense-in-depth strategies throughout the course.
 
-**Authentication & Authorization (Session A):**
-- Implemented password-based authentication with proper rejection of unauthorized access
-- Added multi-factor authentication (MFA) using TOTP for enhanced security
-- Configured RBAC to enforce least-privilege authorization policies
+- **Teaching staff** for supervising lab sessions, providing clarifications on security procedures, and offering feedback on implementation approaches during hands-on exercises.
 
-**Network Security & Hardening (Session B):**
-- Deployed network segmentation to isolate sensitive data from internet-facing tiers
-- Configured default-deny firewall rules following the security-group model
-- Hardened containers using multiple security measures and validated with vulnerability scanning
+- **The Docker Project** and **Kubernetes Community** for providing open-source containerization and orchestration platforms that enable hands-on learning of production-grade security technologies.
 
-### Key Security Principles Applied
-
-1. **Identity is the Perimeter** - Every control asks: "Who are you?" and "What are you allowed to do?"
-2. **Defense in Depth** - Multiple layers of security controls
-3. **Least Privilege** - Grant only the minimum necessary permissions
-4. **Default-Deny** - Block everything except explicitly allowed traffic
-5. **Reduce Attack Surface** - Minimize vulnerabilities through hardening
-
-### Skills Developed
-
-- ✅ Implementing authentication and authorization controls
-- ✅ Configuring multi-factor authentication (MFA/TOTP)
-- ✅ Designing segmented network architectures
-- ✅ Configuring host-based firewalls with default-deny policies
-- ✅ Hardening container configurations for production workloads
-- ✅ Scanning images for vulnerabilities using Trivy
-- ✅ Applying least privilege across compute, network, and storage
-
-### Real-World Applications
-
-These security controls directly map to production cloud environments:
-- AWS Security Groups, Network ACLs, and VPCs
-- Azure Network Security Groups and Virtual Networks
-- Kubernetes RBAC and Network Policies
-- Container security in ECS, EKS, AKS, GKE
-- Zero Trust security architectures
-
-### Course Learning Outcome Achievement
-
-**CLO2 - Construct secure cloud operations that safeguard data integrity:** ✅ **ACHIEVED**
-
-This lab successfully demonstrated the construction of secure cloud operations through:
-- Identity and access management (authentication + authorization)
-- Network security controls (segmentation + firewall)
-- Secure compute practices (container hardening + vulnerability management)
+- **Trivy**, **OWASP**, and other open-source security projects that make vulnerability scanning and security assessment accessible for educational purposes and production deployments.
 
 ---
 
-## References
+## End of Report
 
-- Course lectures — Week 5 (Access Control), Week 9 (Network Security patterns)
-- Docker security — [docs.docker.com/engine/security](https://docs.docker.com/engine/security)
-- CIS Docker / Kubernetes Benchmarks — [www.cisecurity.org](https://www.cisecurity.org)
-- CSA Security Guidance v5 — Infrastructure & Networking; IAM
-- OWASP Container Security Top 10
-- NIST SP 800-190: Application Container Security Guide
+**Lab Status:** All tasks completed with evidence  
+**Evidence Files:** Screenshots documenting all six tasks across both sessions  
+**Verification:** All commands executed successfully with expected outputs  
+**Learning Outcomes:** Achieved comprehensive understanding of authentication, authorization, MFA, network segmentation, firewall configuration, and container hardening
 
 ---
 
-**Lab Completed By:** Surya  
-**Date:** August 30, 2026  
+**Submitted by:** Surya Giri A/L Shanker  
+**Student ID:** 52215124335  
 **Course:** IKB42603 Cloud Computing Security Essentials  
-**Institution:** UniKL MIIT  
-**Instructor:** Prof. Dr. Shahrulniza Musa
+**Institution:** Universiti Kuala Lumpur Malaysian Institute of Information Technology (UniKL MIIT)  
+**Lab:** Lab 4 - Access Control & Network Security  
+**Sessions:** Week 7 (Authentication & Authorization) and Week 8 (Network Security & Hardening)  
+**Date:** August 30, 2026  
+**Professor:** Prof. Dr. Shahrulniza Musa
 
 ---
 
-*This report demonstrates comprehensive understanding and practical implementation of access control and network security principles in cloud computing environments.*
+**Security Statement:** All security implementations performed in this lab used local development environments (kind clusters, Docker containers, self-signed certificates) and test credentials appropriate for educational purposes. No actual sensitive data was used, and no production systems were accessed. The authentication credentials and containers created during this lab have been properly cleaned up and removed after completion. This report demonstrates understanding of security principles and practical skills that can be applied to real-world cloud security implementations with appropriate production-grade controls, enterprise authentication systems, comprehensive audit logging, and regular security assessments.
 
