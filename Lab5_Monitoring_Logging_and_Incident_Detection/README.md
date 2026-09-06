@@ -134,6 +134,10 @@ aws $EP logs create-log-stream --log-group-name /ccse/app --log-stream-name auth
 
 **Figure 1:** The screenshot shows the execution of the Docker run command starting the LocalStack container, the creation of the endpoint variable, and the successful execution of CloudWatch Logs commands creating the log group and log stream, confirming that the logging infrastructure is ready to receive application logs for centralized storage and analysis.
 
+![Setup CloudWatch Logs Configuration](evidence/Setup%20CloudWatch%20Logs%20Configuration.png)
+
+**Figure 1b:** The screenshot shows the creation of the endpoint variable and the execution of AWS CLI commands to create the CloudWatch Logs log group (/ccse/app) and log stream (auth), confirming the logging infrastructure configuration is complete.
+
 #### Notes
 
 The LocalStack setup successfully established a local AWS CloudWatch Logs environment suitable for learning and testing cloud-native logging patterns. LocalStack provides API-compatible emulation of AWS services, allowing developers to test cloud applications locally without AWS costs, network latency, or the need for AWS account credentials. However, LocalStack has limitations compared to production AWS: data is ephemeral (lost when container stops unless volumes are mounted), performance characteristics differ from real AWS infrastructure, and some advanced features may have limited emulation fidelity. Production deployments should use actual AWS CloudWatch Logs with proper IAM permissions, encrypted log transmission (TLS), cross-region replication for disaster recovery, long-term archival to S3 with lifecycle policies, and integration with AWS Security Hub or third-party SIEM systems for comprehensive security monitoring.
