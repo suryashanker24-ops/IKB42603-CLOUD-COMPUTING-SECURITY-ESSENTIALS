@@ -678,8 +678,6 @@ aws $EP s3api list-object-versions --bucket $BUCKET `
 
 #### Notes
 
-#### Notes
-
 The versioning and data remanence task proved that "delete" operations only hide objects behind markers while preserving all versions. The confidential diagnosis appeared deleted (GET returned NoSuchKey) but was fully recoverable using `--version-id null`. This violates privacy regulations requiring actual erasure—merely deleting object keys is non-compliant because data remains recoverable. Production data lifecycle management requires lifecycle rules that automatically expire non-current versions, automated deletion scripts that target version IDs, S3 Object Lock for immutable retention when required, and audit processes verifying deletion completeness. For ultimate deletion assurance, cryptographic erasure through KMS key deletion (Task 8) makes all encrypted versions unrecoverable regardless of copies or individual version deletion status.
 
 ---
