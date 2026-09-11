@@ -6,13 +6,13 @@
 - **Student ID:** 52215124335
 - **Course:** IKB42603 Cloud Computing Security Essentials
 - **Lab Task:** Lab 6 - Object Storage Security & the Data Security Lifecycle
-- **Lecturer Name:** Prof. Dr. Shahrulniza Musa
+- **Lecturer Name:** Madam Adani
 
 ---
 
 ## Overview
 
-In this lab, a comprehensive object storage security implementation was established using Amazon S3 on LocalStack to demonstrate the complete data security lifecycle. A hospital patient records bucket was provisioned with three data classifications (public, internal, confidential) tagged appropriately to demonstrate that security decisions follow classification. The archetypal cloud breach was deliberately reproduced by creating a bucket policy with `Principal: "*"` allowing anonymous access, then confidential patient records were successfully retrieved without any credentials to prove the vulnerability. Block Public Access was applied as a preventative guardrail to reject any future public policies, and a least-privilege policy was implemented granting access only to the account owner and scoped to specific key prefixes. Identity-based (IAM) and resource-based (bucket policy) authorization were tested by creating a DataAnalyst user whose IAM policy allowed reading everything, but the bucket policy explicitly denied access to confidential data, proving that explicit Deny always wins. Default encryption at rest was configured using SSE-KMS with a customer-managed key so that all objects are encrypted automatically even when uploaders forget to specify encryption. Time-bounded delegated access was issued using presigned URLs with 60-second expiry, then a secure transport policy was applied that accidentally locked out all access because LocalStack uses HTTP endpoints where `aws:SecureTransport` evaluates to false. Versioning was enabled to demonstrate that delete operations create delete markers while preserving all previous versions, allowing recovery of supposedly deleted confidential diagnoses to prove data remanence. Lifecycle rules were configured to automate retention policies (365-day expiration for current versions, 30-day expiration for non-current versions), and finally cryptographic erasure was demonstrated by disabling and scheduling deletion of the KMS key, rendering all encrypted objects unrecoverable regardless of how many copies exist.
+In this lab, a comprehensive object storage security implementation was established using Amazon S3 on LocalStack to demonstrate the complete data security lifecycle. Session A focused on access control by reproducing the archetypal cloud breach (`Principal: "*"` allowing anonymous access to confidential patient records), then remediating it with Block Public Access guardrails and least-privilege policies while proving that explicit Deny statements override all Allow permissions through identity-based (IAM) versus resource-based (bucket policy) evaluation. Session B implemented data protection controls including default SSE-KMS encryption with customer-managed keys, time-bounded presigned URLs for delegated access, versioning to demonstrate data remanence where "deleted" objects remain recoverable, automated lifecycle rules for retention compliance, and cryptographic erasure through KMS key deletion to achieve provable destruction of all encrypted data regardless of backup copies.
 
 ---
 
@@ -824,13 +824,7 @@ The following security best practices were implemented and verified throughout t
 
 **Answer:**
 
-The single element that caused the exposure is the **asterisk (`*`)** in `"Principal": "*"`.
-
-**Why it's more dangerous on bucket policy:**
-
-An over-broad IAM policy affects only one user or role within your AWS account—the blast radius is limited to that specific identity's actions. Even if that IAM policy grants excessive permissions like `"Resource": "*"`, the attacker still needs to compromise that specific user's credentials to exploit it, and all actions are attributed to that identity in CloudTrail logs.
-
-In contrast, `"Principal": "*"` in a bucket policy grants access to **everyone on the internet**, including completely anonymous users who have no AWS account, no credentials, and leave no auditable identity trail. The bucket becomes publicly readable via simple HTTP GET requests—no authentication required. This is why every "exposed cloud storage" headline traces back to `Principal: "*"`: it converts private organizational data into a public website accessible to anyone who knows (or guesses) the bucket name and object keys.
+The single element that caused the exposure was `"Principal": "*"` [cite: 2]. It is highly dangerous on a bucket (resource) policy because it grants permissions to absolutely anyone on the public internet, completely bypassing AWS authentication. An over-broad IAM (identity) policy is dangerous, but the threat is contained to the specific individual who possesses those compromised credentials, whereas a public bucket is accessible globally to automated scrapers and attackers.
 
 ---
 
@@ -838,33 +832,7 @@ In contrast, `"Principal": "*"` in a bucket policy grants access to **everyone o
 
 **Answer:**
 
-**Identity-based policy (IAM policy):**
-- Attached to IAM users, groups, or roles
-- Defines what actions that identity can perform
-- Answers the question "what can this user/role do?"
-- Example: DataAnalyst's IAM policy allowed `s3:GetObject` on `Resource: "*"`
-
-**Resource-based policy (bucket policy):**
-- Attached to the resource itself (S3 bucket)
-- Defines who can access the resource and what they can do
-- Answers the question "who can access this bucket and how?"
-- Example: Bucket policy allowed DataAnalyst to read internal/* but denied confidential/*
-
-**Task 4 evaluation:**
-
-For **internal/roster.txt** (ALLOWED):
-- IAM policy: Allow (grants s3:GetObject on *)
-- Bucket policy: Allow (AllowAnalystInternal statement explicitly grants access)
-- Result: ALLOWED (both policies agree)
-- **Deciding policy:** Bucket policy's AllowAnalystInternal statement
-
-For **confidential/record.txt** (DENIED):
-- IAM policy: Allow (grants s3:GetObject on *)
-- Bucket policy: **Deny** (DenyAnalystConfidential explicitly denies s3:* on confidential/*)
-- Result: DENIED (explicit Deny always wins)
-- **Deciding policy:** Bucket policy's DenyAnalystConfidential statement
-
-The key principle: AWS evaluates all applicable policies and applies **explicit Deny > explicit Allow > default deny**. In Task 4, the bucket policy's Deny statement overrode the IAM policy's Allow, proving that resource owners can protect data even from users with broad IAM permissions.
+An **identity-based policy** (IAM) is attached to a user or role and defines what actions that specific entity is permitted to take across AWS[cite: 2]. A **resource-based policy** (Bucket Policy) is attached directly to the resource and dictates who is allowed to access it[cite: 2]. In Task 4's intended AWS evaluation logic, the identity policy authorized the read for `internal/roster.txt`. For `confidential/record.txt`, the resource policy's explicit `Deny` statement took precedence and decided the request by blocking access[cite: 2].
 
 ---
 
@@ -872,31 +840,7 @@ The key principle: AWS evaluates all applicable policies and applies **explicit 
 
 **Answer:**
 
-**Control:**
-- Directly enforces a specific security requirement
-- Example: A bucket policy that grants access to specific principals
-
-**Guardrail:**
-- A safety mechanism that prevents entire classes of dangerous configurations
-- Doesn't grant access—it **blocks dangerous policies** from being created
-- Acts as a failsafe that catches mistakes before they cause harm
-- Example: Block Public Access rejects any attempt to apply `Principal: "*"` policies
-
-**Why the distinction matters for organizations with many engineers:**
-
-In environments with multiple teams, developers, and automation scripts, the risk of misconfiguration scales linearly with the number of people who can modify infrastructure. Without guardrails:
-- One developer's mistake during an urgent deployment exposes the entire bucket
-- An automated script with a typo applies `Principal: "*"` instead of a specific ARN
-- A contractor unfamiliar with security best practices copies a policy from StackOverflow
-- Each incident requires detective controls (monitoring alerts) followed by reactive response
-
-With Block Public Access guardrails:
-- The dangerous policy is **rejected at the API level** before any exposure occurs
-- Mistakes are caught immediately with clear error messages explaining why
-- Developers receive fast feedback during development instead of security team escalations
-- The security team can sleep knowing that even if someone tries to make a bucket public, the attempt will fail
-
-This is **preventative** (stops problems before they happen) versus **detective** (alerts after exposure has already occurred). In production, guardrails enable operational velocity by allowing engineers to move quickly without requiring security team review for every change, because entire classes of catastrophic misconfigurations are architecturally impossible.
+A **control** is a specific rule that manages access (like a bucket policy allowing team A to read folder B). A **guardrail** is a preventative, environment-wide safety mechanism that overrides underlying controls to prevent a disastrous state[cite: 2]. For an organization with many engineers, guardrails like Block Public Access matter because they eliminate human error; even if a junior engineer accidentally writes a vulnerable `"Principal": "*"` control, the guardrail will instantly reject it, ensuring the bucket remains private.
 
 ---
 
@@ -904,37 +848,7 @@ This is **preventative** (stops problems before they happen) versus **detective*
 
 **Answer:**
 
-**No, SSE-KMS does not protect the confidential record from the analyst in Task 4.**
-
-**What server-side encryption (SSE-KMS) DOES protect against:**
-- ✅ **Physical media theft:** If AWS disk drives are stolen, the ciphertext is useless without KMS keys
-- ✅ **Unauthorized AWS employee access:** AWS operations staff cannot read customer data from raw storage
-- ✅ **Decommissioned hardware:** Old drives don't need secure wiping—encrypted data is safe
-- ✅ **Backup/snapshot exposure:** Backups inherit encryption and remain protected
-- ✅ **Regulatory compliance:** Meets encryption-at-rest requirements (HIPAA, PCI-DSS, GDPR)
-
-**What server-side encryption DOES NOT protect against:**
-- ❌ **Authorized API access:** If IAM/bucket policies allow access, S3 automatically decrypts for authorized users
-- ❌ **Compromised credentials:** Attackers with valid AWS credentials get plaintext data through normal API calls
-- ❌ **Application-layer attacks:** If the application can read data, so can attackers who compromise it
-- ❌ **Insider threats:** Malicious insiders with valid permissions access plaintext through authorized channels
-- ❌ **Policy misconfigurations:** `Principal: "*"` still grants public access to encrypted data—S3 decrypts for everyone
-
-**In Task 4 specifically:**
-
-The analyst has valid credentials and the IAM policy grants `s3:GetObject` on all resources. When the analyst requests internal/roster.txt, S3:
-1. Checks authorization (IAM allows, bucket policy allows)
-2. Retrieves the encrypted object from storage
-3. Calls KMS to decrypt the data encryption key (DEK)
-4. Uses the plaintext DEK to decrypt the object
-5. Returns plaintext data to the analyst
-
-**The encryption is completely transparent to authorized users.** It protects data at rest (on disks) but not data in use (during API access). Authorization is controlled by IAM and bucket policies, not encryption.
-
-**When would SSE-KMS help with access control?**
-- If KMS key policies restrict who can decrypt (separate from S3 permissions)
-- If someone gains access to backup copies or disk images outside the S3 API
-- For forensic analysis: KMS logs show who decrypted which keys when
+No, SSE-KMS does not protect the record from the analyst if the analyst has IAM permissions to read the object and access the KMS key. Server-side encryption protects data *at rest*—meaning it defends against threats like physical theft of hard drives from an AWS data center, or improper hardware disposal. It does *not* defend against authorized logical access; AWS automatically decrypts the data in memory and serves it as plaintext to any properly authenticated API caller.
 
 ---
 
@@ -942,69 +856,10 @@ The analyst has valid credentials and the IAM policy grants `s3:GetObject` on al
 
 **Answer:**
 
-**Why delete-object alone is not compliant:**
+Using `delete-object` alone is not compliant because it only applies a "Delete Marker" to hide the file from standard API lists; the underlying unredacted data is fully retained and recoverable (data remanence), violating the right to erasure[cite: 2]. Two compliant mechanisms for provable deletion are:
 
-Task 7 evidence shows that after "deleting" confidential/record.txt:
-1. S3 created a **delete marker** (IsLatest: true) that hides the object
-2. All three previous versions still exist with their version IDs
-3. Normal GET requests return NoSuchKey (object "appears" deleted to users)
-4. GET with `--version-id null` successfully recovered the original version
-5. The recovered file contains the original unredacted diagnosis: "Patient: Ahmad bin Ali, Diagnosis: confidential"
-
-**From a privacy regulation perspective (PDPA/GDPR):**
-- Patient requested erasure of personal health information
-- Organization executed `delete-object` and considers the data "deleted"
-- BUT the data is fully accessible using version-specific API calls
-- This is **data remanence**—claiming deletion while data remains recoverable
-- **Not compliant** with "right to erasure" because the data still exists
-
-**Two mechanisms for provable deletion:**
-
-**Mechanism 1: Per-version deletion with audit trail**
-
-```powershell
-# Delete every version ID explicitly
-aws s3api delete-object --bucket $BUCKET --key confidential/record.txt --version-id null
-aws s3api delete-object --bucket $BUCKET --key confidential/record.txt --version-id $v2id
-aws s3api delete-object --bucket $BUCKET --key confidential/record.txt --version-id $v3id
-aws s3api delete-object --bucket $BUCKET --key confidential/record.txt --version-id $deletemarker
-
-# Verify complete removal
-aws s3api list-object-versions --bucket $BUCKET --prefix confidential/record.txt
-```
-
-**Evidence of compliance:**
-- Run list-object-versions before (shows N versions) and after (shows 0 versions)
-- Demonstrate that GET with any version ID returns NoSuchKey
-- CloudTrail audit logs show DeleteObject API call for each specific version ID
-- Present timestamped screenshots proving no versions remain
-
-**Mechanism 2: Cryptographic erasure (KMS key deletion)**
-
-```powershell
-# Schedule KMS key deletion
-aws kms schedule-key-deletion --key-id $KEY_ID --pending-window-in-days 7
-
-# Verify key state
-aws kms describe-key --key-id $KEY_ID  # Shows PendingDeletion
-
-# Attempt to read any version
-aws s3api get-object --bucket $BUCKET --key confidential/record.txt  # KMS decrypt fails
-```
-
-**Evidence of compliance:**
-- KMS describe-key shows KeyState: PendingDeletion with deletion timestamp
-- Demonstrate that reading any object (any version) fails with KMS decryption error
-- CloudTrail shows ScheduleKeyDeletion event with date and time
-- All ciphertext becomes **permanently unrecoverable** across all versions, backups, and copies
-
-**Why cryptographic erasure is stronger:**
-
-You don't need to find every version, every backup, every snapshot, every cross-region replica. AWS manages replication—you don't control where copies are. Key deletion makes **all ciphertext simultaneously useless**, regardless of location or quantity. It's provable because cryptographic security guarantees that decryption is computationally infeasible without the key, and KMS audit logs provide tamper-evident proof of when the key was deleted.
-
-**Best practice:** Use both mechanisms:
-1. Delete all versions immediately (removes from API visibility)
-2. Schedule key deletion 7 days later (cryptographic assurance across all copies)
+1. **Targeted Version Deletion:** Explicitly targeting and deleting every specific `VersionId` of the object[cite: 2].
+2. **Cryptographic Erasure:** Destroying the specific KMS key used to encrypt the patient's data, which instantly mathematically destroys all versions of the file simultaneously[cite: 2].
 
 ---
 
@@ -1012,73 +867,9 @@ You don't need to find every version, every backup, every snapshot, every cross-
 
 **Answer:**
 
-**Command 1:**
-```powershell
-aws s3api get-public-access-block --bucket $BUCKET
-```
-
-**Control evidenced:** Preventative guardrails against public bucket exposure (CIS AWS Benchmark 2.1.5, CSA CCM IVS-06)
-
-**What this proves:**
-- All four Block Public Access flags are enabled (BlockPublicAcls, IgnorePublicAcls, BlockPublicPolicy, RestrictPublicBuckets)
-- Organization has implemented defense-in-depth beyond just bucket policies
-- Even if someone attempts to apply `Principal: "*"`, the configuration rejects it
-- Aligns with AWS Well-Architected Security Pillar: "apply controls at multiple layers"
-
-**Audit value:** Demonstrates proactive prevention of the #1 cause of cloud data breaches. Provides evidence for ISO 27001 A.13.1.3 (segregation in networks) and regulatory requirements that mandate "technical measures to prevent unauthorized disclosure."
-
----
-
-**Command 2:**
-```powershell
-aws s3api get-bucket-encryption --bucket $BUCKET
-```
-
-**Control evidenced:** Encryption at rest with customer-managed keys (NIST 800-53 SC-28, HIPAA §164.312(a)(2)(iv))
-
-**What this proves:**
-- Default encryption is enabled (SSEAlgorithm: aws:kms)
-- Using customer-managed key (not AWS-managed keys), giving organization control over key lifecycle
-- BucketKeyEnabled demonstrates envelope encryption optimization
-- All objects are automatically encrypted without developer action (security by default)
-
-**Audit value:**
-- Demonstrates compliance with data protection regulations requiring encryption of sensitive data at rest
-- Shows that encryption is **enforced by default**, not optional
-- Key ID can be cross-referenced with KMS key policy to verify access controls
-- Provides evidence for GDPR Article 32 (security of processing), PCI-DSS Requirement 3.4 (render PAN unreadable), and HIPAA encryption requirements
-
----
-
-**Command 3:**
-```powershell
-aws s3api get-bucket-lifecycle-configuration --bucket $BUCKET
-```
-
-**Control evidenced:** Automated data retention and lifecycle management (ISO 27001 A.8.3.3, GDPR Article 5(1)(e))
-
-**What this proves:**
-- Organization has **documented, automated retention policies** expressed as machine-executable rules
-- Confidential records expire after defined periods (365 days current, 30 days non-current)
-- Incomplete uploads are cleaned up automatically (7 days) for operational hygiene
-- Policies are **consistently enforced** without relying on manual processes
-
-**Audit value:**
-- Demonstrates compliance with "data minimization" principles (GDPR Article 5(1)(c))
-- Provides evidence for "right to erasure" processes—data doesn't just sit forever
-- Shows **auditability**: policy is versioned, traceable, and reproducible
-- Proves storage of personal data is "kept in a form which permits identification for no longer than necessary" (GDPR Article 5(1)(e))
-- Satisfies regulatory examination questions like "how do you ensure data is deleted when retention periods expire?"
-
----
-
-**Bonus commands for comprehensive audit:**
-
-**Command 4:** `aws s3api get-bucket-versioning` — Evidences audit trail capability and recovery from accidental/malicious deletion
-
-**Command 5:** `aws kms describe-key --key-id $KEY_ID` — Evidences cryptographic erasure capability with key state showing PendingDeletion and scheduled deletion date, proving that when retention expires, data can be provably destroyed
-
-Together, these commands provide evidence across the complete security lifecycle: prevention (Block Public Access), protection (encryption), retention (lifecycle rules), and destruction (versioning + cryptographic erasure).
+1. **`get-public-access-block`:** Evidences the preventative guardrail control ensuring the storage boundary cannot be publicly exposed[cite: 2].
+2. **`get-bucket-lifecycle-configuration`:** Evidences the automated data retention/retirement control, proving data is not held indefinitely[cite: 2].
+3. **`get-bucket-versioning`:** Evidences the data integrity control, proving protection against accidental modification, deletion, or ransomware[cite: 2].
 
 ---
 ## Conclusion
@@ -1192,7 +983,7 @@ tion
 
 The following resources were referenced during this lab and provide additional depth for further study:
 
-1. **Course lectures** — Week 4 (Data Protection), Week 10 (Policy, Compliance & Risk), Week 11 (Compliance Assessment & Reporting), Prof. Dr. Shahrulniza Musa, UniKL MIIT, covering data security lifecycle, object storage security models, policy evaluation logic, and compliance evidence requirements.
+1. **Course lectures** — Week 4 (Data Protection), Week 10 (Policy, Compliance & Risk), Week 11 (Compliance Assessment & Reporting), Madam Adani, UniKL MIIT, covering data security lifecycle, object storage security models, policy evaluation logic, and compliance evidence requirements.
 
 2. **Amazon S3 Security Best Practices** — https://docs.aws.amazon.com/AmazonS3/latest/userguide/security-best-practices.html — Official AWS documentation for bucket policies, Block Public Access, encryption, versioning, lifecycle management, and access control patterns.
 
@@ -1280,7 +1071,7 @@ Get-ChildItem *.json, *.txt
 
 This lab was completed as part of the IKB42603 Cloud Computing Security Essentials course at Universiti Kuala Lumpur Malaysian Institute of Information Technology (UniKL MIIT). Special thanks to:
 
-- **Prof. Dr. Shahrulniza Musa** for developing the comprehensive lab curriculum covering object storage security, data classification principles, policy evaluation logic, encryption at rest, versioning and retention strategies, and cryptographic erasure techniques, and for providing expert guidance on cloud security best practices, regulatory compliance requirements (GDPR, PDPA, HIPAA), and defense-in-depth strategies throughout the course.
+- **Madam Adani** for developing the comprehensive lab curriculum covering object storage security, data classification principles, policy evaluation logic, encryption at rest, versioning and retention strategies, and cryptographic erasure techniques, and for providing expert guidance on cloud security best practices, regulatory compliance requirements (GDPR, PDPA, HIPAA), and defense-in-depth strategies throughout the course.
 
 - **Teaching staff** for supervising lab sessions, providing clarifications on AWS S3 security architecture and policy syntax, offering feedback on implementation approaches during hands-on exercises, and facilitating discussions on real-world breach case studies that reinforce the importance of preventative controls.
 
